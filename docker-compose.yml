@@ -1,0 +1,75 @@
+services:
+  mongo:
+    image: mongo:latest
+    container_name: bujogeek-mongo
+    ports:
+      - "27017:27017" # Exposes MongoDB port to the host machine
+    environment:
+      # Use variables from .env file
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
+    volumes:
+      - ./data/db:/data/db # Persists database data on the host
+      - ./data/backups:/data/backups # For backup service
+    networks:
+      - bujogeek_network
+    restart: always
+
+  backend:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: bujogeek-backend
+    environment:
+      - NODE_ENV=production
+      - PORT=${PORT}
+      - DB_URI=mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@mongo:27017/bujogeek?authSource=admin
+      - JWT_SECRET=${JWT_SECRET}
+      - SECRET_KEY=${SECRET_KEY}
+    expose:
+      - "${PORT}"
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:${PORT}/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    depends_on:
+      - mongo
+    networks:
+      - bujogeek_network
+    restart: always
+
+  frontend:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+      args:
+        - COMPOSE_BAKE=true
+    container_name: bujogeek-frontend
+    environment:
+      - BACKEND_PORT=${PORT}
+    ports:
+      - "9989:80"  # As specified in the plan for reverse proxy
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - bujogeek_network
+    restart: always
+
+  backup:
+    image: mongo:latest
+    container_name: bujogeek-backup
+    volumes:
+      - ./data/backups:/backups
+      - ./backup.sh:/backup.sh
+    depends_on:
+      - mongo
+    networks:
+      - bujogeek_network
+    entrypoint: ["/bin/sh", "/backup.sh"]
+    profiles: ["backup"]  # Only run when explicitly requested
+
+networks:
+  bujogeek_network:
+    driver: bridge
