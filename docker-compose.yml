@@ -1,20 +1,4 @@
 services:
-  mongo:
-    image: mongo:latest
-    container_name: bujogeek-mongo
-    ports:
-      - "27017:27017" # Exposes MongoDB port to the host machine
-    environment:
-      # Use variables from .env file
-      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
-      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
-    volumes:
-      - ./data/db:/data/db # Persists database data on the host
-      - ./data/backups:/data/backups # For backup service
-    networks:
-      - bujogeek_network
-    restart: always
-
   backend:
     build:
       context: ./server
@@ -23,7 +7,7 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=${PORT}
-      - DB_URI=mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@mongo:27017/bujogeek?authSource=admin
+      - DB_URI=mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@192.168.1.17:27017/bujogeek?authSource=admin
       - JWT_SECRET=${JWT_SECRET}
       - SECRET_KEY=${SECRET_KEY}
     expose:
@@ -33,8 +17,6 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-    depends_on:
-      - mongo
     networks:
       - bujogeek_network
     restart: always
@@ -56,19 +38,6 @@ services:
     networks:
       - bujogeek_network
     restart: always
-
-  backup:
-    image: mongo:latest
-    container_name: bujogeek-backup
-    volumes:
-      - ./data/backups:/backups
-      - ./backup.sh:/backup.sh
-    depends_on:
-      - mongo
-    networks:
-      - bujogeek_network
-    entrypoint: ["/bin/sh", "/backup.sh"]
-    profiles: ["backup"]  # Only run when explicitly requested
 
 networks:
   bujogeek_network:

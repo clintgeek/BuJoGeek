@@ -18,11 +18,17 @@ app.use(morgan('dev'));
 // MongoDB Connection
 const connectDB = async () => {
   try {
+    console.log('Connecting to MongoDB at:', process.env.DB_URI?.replace(/:\/\/(.*)@/, '://******:******@'));
+
     await mongoose.connect(process.env.DB_URI, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
     });
+
+    // Create database if it doesn't exist (MongoDB creates it automatically)
     console.log('MongoDB connected');
+    console.log('Using database:', mongoose.connection.db.databaseName);
+
   } catch (error) {
     console.error('MongoDB connection error:', error);
     process.exit(1);
@@ -35,7 +41,10 @@ app.get('/', (req, res) => {
 });
 
 app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'healthy' });
+  res.status(200).json({
+    status: 'healthy',
+    database: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected'
+  });
 });
 
 // Start server
