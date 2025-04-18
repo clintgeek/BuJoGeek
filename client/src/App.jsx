@@ -1,31 +1,26 @@
-import { useState } from 'react';
-import { Box, Typography, Container, Button } from '@mui/material';
+import { BrowserRouter as Router } from 'react-router-dom';
+import { CssBaseline, ThemeProvider } from '@mui/material';
+import { LocalizationProvider } from '@mui/x-date-pickers';
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+import { AuthProvider } from './context/AuthContext';
+import { TaskProvider } from './context/TaskContext';
+import theme from './theme/theme';
+import MainContent from './components/MainContent';
 
 function App() {
-  const [count, setCount] = useState(0);
-
   return (
-    <Container maxWidth="md">
-      <Box sx={{ my: 4, textAlign: 'center' }}>
-        <Typography variant="h2" component="h1" gutterBottom>
-          BuJoGeek
-        </Typography>
-        <Typography variant="h5" component="h2" gutterBottom>
-          Digital Bullet Journal
-        </Typography>
-        <Box sx={{ my: 4 }}>
-          <Button
-            variant="contained"
-            onClick={() => setCount((count) => count + 1)}
-          >
-            count is {count}
-          </Button>
-        </Box>
-        <Typography variant="body1">
-          Coming soon - Part of GeekSuite
-        </Typography>
-      </Box>
-    </Container>
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <LocalizationProvider dateAdapter={AdapterDateFns}>
+        <AuthProvider>
+          <TaskProvider>
+            <Router>
+              <MainContent />
+            </Router>
+          </TaskProvider>
+        </AuthProvider>
+      </LocalizationProvider>
+    </ThemeProvider>
   );
 }
 

@@ -3,17 +3,35 @@ import mongoose from 'mongoose';
 import cors from 'cors';
 import morgan from 'morgan';
 import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+// Import routes
+import templateRoutes from './src/routes/templateRoutes.js';
+import journalRoutes from './src/routes/journalRoutes.js';
+import taskRoutes from './src/routes/taskRoutes.js';
+import authRoutes from './src/routes/authRoutes.js';
+
+// Get the directory name
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Load environment variables
-dotenv.config();
+dotenv.config({ path: path.resolve(__dirname, '.env.local') });
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001;
 
 // Middleware
 app.use(cors());
 app.use(express.json());
 app.use(morgan('dev'));
+
+// Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/templates', templateRoutes);
+app.use('/api/journal', journalRoutes);
+app.use('/api/tasks', taskRoutes);
 
 // MongoDB Connection
 const connectDB = async () => {

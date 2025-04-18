@@ -275,3 +275,15 @@ BuJoGeek provides a digital alternative to traditional Bullet Journaling, mainta
   - Automated testing
   - Automated deployment
   - Environment management
+
+  I don't want to overcomplicate this, at least not at first. I want to stay pretty true to the simplicity of the BuJo.
+
+Days are just rapid entries that get carried forward to the next day if incomplete, unless they're migrated to the low priority backlog or migrated forward to a future time.
+
+weeks are overviews of high and medium priority tasks and scheduled items, showing 7 days at a time
+
+months are a 29-31 day overview with high priority tasks and scheduled items
+
+year is a 12 month view, by months, with high priority tasks and scheduled items
+
+low priority backlog is a list of items that have been (<) migrated backwards. They are held seperate from everything else an should be occaisionally reviewed manually.
