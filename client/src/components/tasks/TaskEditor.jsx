@@ -18,7 +18,7 @@ import {
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 import { Close as CloseIcon } from '@mui/icons-material';
-import { useTaskContext } from '../../context/TaskContext';
+import { useTaskContext } from '../../context/TaskContext.jsx';
 
 const signifierOptions = [
   { value: '*', label: 'Task (*)' },

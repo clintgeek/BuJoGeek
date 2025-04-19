@@ -1,143 +1,208 @@
-import { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback } from 'react';
 import axios from 'axios';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
 
 const TaskContext = createContext();
 
-const initialFilters = {
-  status: '',
-  priority: '',
-  signifier: '',
-  tags: [],
-  search: '',
-  dueDate: null
+export const useTaskContext = () => {
+  const context = useContext(TaskContext);
+  if (!context) {
+    throw new Error('useTaskContext must be used within a TaskProvider');
+  }
+  return context;
 };
 
-export const TaskProvider = ({ children }) => {
+const TaskProvider = ({ children }) => {
   const [tasks, setTasks] = useState([]);
-  const [filters, setFilters] = useState(initialFilters);
-
-  // Get the auth token from localStorage
-  const getAuthToken = () => {
-    return localStorage.getItem('token');
-  };
-
-  // Create axios instance with auth header
-  const api = axios.create({
-    baseURL: API_URL,
-    headers: {
-      'Authorization': `Bearer ${getAuthToken()}`
-    }
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [filters, setFilters] = useState({
+    search: '',
+    status: '',
+    priority: '',
+    signifier: '',
+    tags: []
   });
+
+  const updateFilters = useCallback((newFilters) => {
+    setFilters(prev => ({ ...prev, ...newFilters }));
+  }, []);
+
+  const clearFilters = useCallback(() => {
+    setFilters({
+      search: '',
+      status: '',
+      priority: '',
+      signifier: '',
+      tags: []
+    });
+  }, []);
 
   const fetchTasks = useCallback(async () => {
     try {
-      const params = {};
-      if (filters.status) params.status = filters.status;
-      if (filters.priority) params.priority = filters.priority;
-      if (filters.signifier) params.signifier = filters.signifier;
-      if (filters.tags?.length) params.tags = filters.tags.join(',');
-      if (filters.search) params.search = filters.search;
-      if (filters.dueDate) params.dueDate = filters.dueDate;
-
-      const response = await api.get('/tasks', { params });
+      setLoading(true);
+      setError(null);
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`${API_URL}/tasks`, {
+        params: filters,
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
       setTasks(response.data);
-    } catch (error) {
-      console.error('Error fetching tasks:', error);
-      throw error;
+    } catch (err) {
+      setError(err.message);
+      console.error('Error fetching tasks:', err);
+    } finally {
+      setLoading(false);
     }
   }, [filters]);
 
-  const createTask = async (taskData) => {
+  const fetchDailyTasks = useCallback(async (date) => {
     try {
-      const response = await api.post('/tasks', taskData);
-      setTasks(prevTasks => [...prevTasks, response.data]);
+      setLoading(true);
+      setError(null);
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`${API_URL}/tasks/daily`, {
+        params: { date: date.toISOString() },
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+      setTasks(response.data);
+    } catch (err) {
+      setError(err.message);
+      console.error('Error fetching daily tasks:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const fetchWeeklyTasks = useCallback(async (weekStart, weekEnd) => {
+    try {
+      setLoading(true);
+      setError(null);
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`${API_URL}/tasks/weekly`, {
+        params: {
+          startDate: weekStart.toISOString(),
+          endDate: weekEnd.toISOString()
+        },
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+      setTasks(response.data);
+    } catch (err) {
+      setError(err.message);
+      console.error('Error fetching weekly tasks:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const fetchMonthlyTasks = useCallback(async (monthStart, monthEnd) => {
+    try {
+      setLoading(true);
+      setError(null);
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`${API_URL}/tasks/monthly`, {
+        params: {
+          startDate: monthStart.toISOString(),
+          endDate: monthEnd.toISOString()
+        },
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+      setTasks(response.data);
+    } catch (err) {
+      setError(err.message);
+      console.error('Error fetching monthly tasks:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const fetchYearlyTasks = useCallback(async (yearStart, yearEnd) => {
+    try {
+      setLoading(true);
+      setError(null);
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`${API_URL}/tasks/yearly`, {
+        params: {
+          startDate: yearStart.toISOString(),
+          endDate: yearEnd.toISOString()
+        },
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+      setTasks(response.data);
+    } catch (err) {
+      setError(err.message);
+      console.error('Error fetching yearly tasks:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const createTask = useCallback(async (taskData) => {
+    try {
+      setLoading(true);
+      setError(null);
+      const token = localStorage.getItem('token');
+      const response = await axios.post(`${API_URL}/tasks`, taskData, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+      setTasks(prev => [response.data, ...prev]);
       return response.data;
-    } catch (error) {
-      console.error('Error creating task:', error);
-      throw error;
+    } catch (err) {
+      setError(err.message);
+      console.error('Error creating task:', err);
+      throw err;
+    } finally {
+      setLoading(false);
     }
-  };
+  }, []);
 
-  const updateTask = async (taskId, taskData) => {
+  const deleteTask = useCallback(async (taskId) => {
     try {
-      const response = await api.put(`/tasks/${taskId}`, taskData);
-      setTasks(prevTasks =>
-        prevTasks.map(task =>
-          task._id === taskId ? response.data : task
-        )
-      );
-      return response.data;
-    } catch (error) {
-      console.error('Error updating task:', error);
-      throw error;
+      setLoading(true);
+      setError(null);
+      const token = localStorage.getItem('token');
+      await axios.delete(`${API_URL}/tasks/${taskId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+      setTasks(prev => prev.filter(task => task._id !== taskId));
+    } catch (err) {
+      setError(err.message);
+      console.error('Error deleting task:', err);
+      throw err;
+    } finally {
+      setLoading(false);
     }
-  };
-
-  const updateTaskStatus = async (taskId, status) => {
-    try {
-      const response = await api.patch(`/tasks/${taskId}/status`, { status });
-      setTasks(prevTasks =>
-        prevTasks.map(task =>
-          task._id === taskId ? response.data : task
-        )
-      );
-      return response.data;
-    } catch (error) {
-      console.error('Error updating task status:', error);
-      throw error;
-    }
-  };
-
-  const deleteTask = async (taskId) => {
-    try {
-      await api.delete(`/tasks/${taskId}`);
-      setTasks(prevTasks =>
-        prevTasks.filter(task => task._id !== taskId)
-      );
-    } catch (error) {
-      console.error('Error deleting task:', error);
-      throw error;
-    }
-  };
-
-  const addSubtask = async (parentId, subtaskData) => {
-    try {
-      const response = await api.post(`/tasks/${parentId}/subtasks`, subtaskData);
-      setTasks(prevTasks =>
-        prevTasks.map(task =>
-          task._id === parentId
-            ? { ...task, subtasks: [...(task.subtasks || []), response.data] }
-            : task
-        )
-      );
-      return response.data;
-    } catch (error) {
-      console.error('Error adding subtask:', error);
-      throw error;
-    }
-  };
-
-  const updateFilters = (newFilters) => {
-    setFilters(prev => ({ ...prev, ...newFilters }));
-  };
-
-  const clearFilters = () => {
-    setFilters(initialFilters);
-  };
+  }, []);
 
   const value = {
     tasks,
+    loading,
+    error,
     filters,
-    fetchTasks,
-    createTask,
-    updateTask,
-    updateTaskStatus,
-    deleteTask,
-    addSubtask,
     updateFilters,
-    clearFilters
+    clearFilters,
+    fetchTasks,
+    fetchDailyTasks,
+    fetchWeeklyTasks,
+    fetchMonthlyTasks,
+    fetchYearlyTasks,
+    createTask,
+    deleteTask
   };
 
   return (
@@ -147,10 +212,4 @@ export const TaskProvider = ({ children }) => {
   );
 };
 
-export const useTaskContext = () => {
-  const context = useContext(TaskContext);
-  if (!context) {
-    throw new Error('useTaskContext must be used within a TaskProvider');
-  }
-  return context;
-};
+export { TaskProvider };

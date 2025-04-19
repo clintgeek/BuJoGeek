@@ -27,6 +27,9 @@ app.use(cors());
 app.use(express.json());
 app.use(morgan('dev'));
 
+// Serve static files from the client build directory
+app.use(express.static(path.join(__dirname, '../client/dist')));
+
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/templates', templateRoutes);

@@ -15,7 +15,7 @@ import {
   Search as SearchIcon,
   Clear as ClearIcon
 } from '@mui/icons-material';
-import { useTaskContext } from '../../context/TaskContext';
+import { useTaskContext } from '../../context/TaskContext.jsx';
 
 const TaskFilters = () => {
   const {

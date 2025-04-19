@@ -286,20 +286,124 @@ export const migrateTaskToFuture = async (req, res) => {
   }
 };
 
-// Carry forward task
+// Get tasks for yearly log
+export const getYearlyTasks = async (req, res) => {
+  try {
+    const { startDate, endDate } = req.query;
+    const query = {
+      createdBy: req.user._id,
+      $or: [
+        {
+          dueDate: {
+            $gte: new Date(startDate),
+            $lte: new Date(endDate)
+          }
+        },
+        {
+          createdAt: {
+            $gte: new Date(startDate),
+            $lte: new Date(endDate)
+          }
+        }
+      ]
+    };
+
+    const tasks = await Task.find(query)
+      .populate('parentTask', 'content status')
+      .sort({ dueDate: 1 });
+
+    res.json(tasks);
+  } catch (error) {
+    handleError(res, error);
+  }
+};
+
+// Carry forward a task
 export const carryForwardTask = async (req, res) => {
   try {
-    const task = await Task.findOne({
-      _id: req.params.id,
-      createdBy: req.user._id
-    });
+    const { newDueDate } = req.body;
+    const task = await Task.findOneAndUpdate(
+      {
+        _id: req.params.id,
+        createdBy: req.user._id
+      },
+      {
+        dueDate: newDueDate,
+        status: 'pending',
+        migrated: true
+      },
+      { new: true, runValidators: true }
+    );
 
     if (!task) {
       return res.status(404).json({ message: 'Task not found' });
     }
 
-    const newTask = await task.carryForward();
-    res.json(newTask);
+    res.json(task);
+  } catch (error) {
+    handleError(res, error);
+  }
+};
+
+// Get tasks for weekly log
+export const getWeeklyTasks = async (req, res) => {
+  try {
+    const { startDate, endDate } = req.query;
+    const query = {
+      createdBy: req.user._id,
+      $or: [
+        {
+          dueDate: {
+            $gte: new Date(startDate),
+            $lte: new Date(endDate)
+          }
+        },
+        {
+          createdAt: {
+            $gte: new Date(startDate),
+            $lte: new Date(endDate)
+          }
+        }
+      ]
+    };
+
+    const tasks = await Task.find(query)
+      .populate('parentTask', 'content status')
+      .sort({ dueDate: 1, createdAt: -1 });
+
+    res.json(tasks);
+  } catch (error) {
+    handleError(res, error);
+  }
+};
+
+// Get tasks for monthly log
+export const getMonthlyTasks = async (req, res) => {
+  try {
+    const { startDate, endDate } = req.query;
+    const query = {
+      createdBy: req.user._id,
+      $or: [
+        {
+          dueDate: {
+            $gte: new Date(startDate),
+            $lte: new Date(endDate)
+          }
+        },
+        {
+          createdAt: {
+            $gte: new Date(startDate),
+            $lte: new Date(endDate)
+          }
+        }
+      ]
+    };
+
+    const tasks = await Task.find(query)
+      .populate('parentTask', 'content status')
+      .sort({ dueDate: 1, createdAt: -1 });
+
+    res.json(tasks);
   } catch (error) {
     handleError(res, error);
   }

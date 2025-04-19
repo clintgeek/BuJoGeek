@@ -1,12 +1,12 @@
-import { createTheme } from '@mui/material/styles';
+import { createTheme } from '@mui/material';
 
 const theme = createTheme({
   palette: {
     primary: {
-      main: '#6098CC',
-      light: '#81B1D9',
-      dark: '#4B7AA3',
-      contrastText: '#FFFFFF',
+      main: '#4285f4', // GeekSuite theme blue
+      light: '#7dabf7',
+      dark: '#2c5499',
+      contrastText: '#ffffff',
     },
     secondary: {
       main: '#1976D2',
@@ -15,8 +15,8 @@ const theme = createTheme({
       contrastText: '#FFFFFF',
     },
     background: {
-      default: '#F5F5F5',
-      paper: '#FFFFFF',
+      default: '#f5f5f5', // Very light grey for view background
+      paper: '#ffffff',
       codeEditor: '#f5f5f5',
       mindMap: '#f8f9fa',
     },
@@ -33,8 +33,8 @@ const theme = createTheme({
       main: '#2196F3',
     },
     text: {
-      primary: '#212121',
-      secondary: '#757575',
+      primary: '#333333', // Dark grey for text
+      secondary: '#666666',
       disabled: '#BDBDBD',
       placeholder: 'rgba(117, 117, 117, 0.7)',
     },
@@ -76,21 +76,19 @@ const theme = createTheme({
       fontSize: '0.9rem',
     },
   },
-  spacing: 8,
+  spacing: 8, // Base spacing unit of 8px
   shape: {
     borderRadius: 8,
   },
   components: {
     MuiAppBar: {
-      styleOverrides: {
-        root: {
-          height: 60,
-          backgroundColor: '#6098CC',
-          boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.2)',
-        },
-      },
       defaultProps: {
         elevation: 0,
+      },
+      styleOverrides: {
+        root: {
+          height: 64, // Standard header height
+        },
       },
     },
     MuiButton: {
@@ -158,6 +156,34 @@ const theme = createTheme({
           '&:hover': {
             backgroundColor: 'rgba(0, 0, 0, 0.04)',
           },
+        },
+      },
+    },
+    MuiBottomNavigation: {
+      styleOverrides: {
+        root: {
+          height: 64, // Match header height
+          backgroundColor: '#ffffff',
+        },
+      },
+    },
+    MuiBottomNavigationAction: {
+      styleOverrides: {
+        root: {
+          color: '#666666', // Dark grey for inactive icons
+          '&.Mui-selected': {
+            color: '#4285f4', // Theme blue for active icon
+          },
+        },
+      },
+    },
+    MuiPaper: {
+      defaultProps: {
+        elevation: 0,
+      },
+      styleOverrides: {
+        root: {
+          backgroundImage: 'none',
         },
       },
     },

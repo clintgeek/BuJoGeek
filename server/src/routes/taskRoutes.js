@@ -9,6 +9,9 @@ import {
   updateTaskStatus,
   addSubtask,
   getDailyTasks,
+  getWeeklyTasks,
+  getMonthlyTasks,
+  getYearlyTasks,
   getBacklogTasks,
   migrateTaskToBacklog,
   migrateTaskToFuture,
@@ -22,8 +25,13 @@ router.use(authenticate);
 
 // Base route: /api/tasks
 
-// Daily log routes
+// Time-based views
 router.get('/daily', getDailyTasks);
+router.get('/weekly', getWeeklyTasks);
+router.get('/monthly', getMonthlyTasks);
+router.get('/yearly', getYearlyTasks);
+
+// Backlog routes
 router.get('/backlog', getBacklogTasks);
 
 // Migration routes

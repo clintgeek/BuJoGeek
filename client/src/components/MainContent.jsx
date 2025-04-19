@@ -93,7 +93,7 @@ const MainContent = () => {
         sx={{
           flexGrow: 1,
           py: { xs: 2, sm: 3 },
-          px: { xs: 1, sm: 2 }
+          px: { xs: 1, sm: 2 },
         }}
       >
         <Routes>

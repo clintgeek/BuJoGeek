@@ -1,67 +1,44 @@
-import { useState, useEffect } from 'react';
-import {
-  Box,
-  List,
-  Typography,
-  CircularProgress,
-  Alert
-} from '@mui/material';
+import React, { useEffect } from 'react';
+import { List, Box, Typography } from '@mui/material';
 import TaskCard from './TaskCard';
 import { useTaskContext } from '../../context/TaskContext';
 
-const TaskList = () => {
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const { tasks, fetchTasks } = useTaskContext();
+const TaskList = ({ onEdit, currentDate }) => {
+  const { tasks, loading, error, fetchTasks } = useTaskContext();
 
   useEffect(() => {
-    const loadTasks = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        await fetchTasks();
-      } catch (err) {
-        setError(err.message || 'Failed to load tasks');
-      } finally {
-        setLoading(false);
-      }
-    };
+    const startOfDay = new Date(currentDate);
+    startOfDay.setHours(0, 0, 0, 0);
 
-    loadTasks();
-  }, [fetchTasks]);
+    const endOfDay = new Date(currentDate);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    fetchTasks(startOfDay, endOfDay);
+  }, [currentDate, fetchTasks]);
 
   if (loading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
-        <CircularProgress />
+      <Box sx={{ p: 2 }}>
+        <Typography>Loading tasks...</Typography>
       </Box>
     );
   }
 
   if (error) {
     return (
-      <Alert severity="error" sx={{ mb: 2 }}>
-        {error}
-      </Alert>
-    );
-  }
-
-  if (!tasks.length) {
-    return (
-      <Box sx={{ textAlign: 'center', p: 3 }}>
-        <Typography color="textSecondary">
-          No tasks found. Create a new task to get started!
-        </Typography>
+      <Box sx={{ p: 2 }}>
+        <Typography color="error">Error loading tasks: {error}</Typography>
       </Box>
     );
   }
 
   return (
-    <List sx={{ width: '100%' }}>
+    <List sx={{ flex: 1, overflow: 'auto' }}>
       {tasks.map((task) => (
         <TaskCard
           key={task._id}
           task={task}
+          onEdit={onEdit}
         />
       ))}
     </List>

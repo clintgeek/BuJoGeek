@@ -1,254 +1,287 @@
 # GeekSuite Design Language
 
-## Overview
-This document outlines the design language used across the GeekSuite applications, ensuring consistency in user experience and visual identity. The design system is built on Material-UI (MUI) with custom theming and components.
+This document defines the design language for all GeekSuite applications. It ensures a consistent, clean, and accessible user experience across all platforms. The system uses Material-UI (MUI) as the foundation, extended with custom theming and components.
 
-## Color Palette
+## 🎨 Color System
 
 ### Primary Colors
-- **Primary Blue**: `#6098CC` (main)
-  - Light: `#81B1D9`
-  - Dark: `#4B7AA3`
-  - Contrast Text: `#FFFFFF`
+
+| Role | Color |
+|------|-------|
+| Main | #6098CC |
+| Light | #81B1D9 |
+| Dark | #4B7AA3 |
+| Contrast Text | #FFFFFF |
 
 ### Secondary Colors
-- **Secondary Blue**: `#1976D2` (main)
-  - Light: `#2196F3`
-  - Dark: `#1565C0`
-  - Contrast Text: `#FFFFFF`
 
-### Background Colors
-- Default: `#F5F5F5`
-- Paper: `#FFFFFF`
-- Code Editor: `#f5f5f5` (light mode)
-- Mind Map: `#f8f9fa`
+| Role | Color |
+|------|-------|
+| Main | #1976D2 |
+| Light | #2196F3 |
+| Dark | #1565C0 |
+| Contrast Text | #FFFFFF |
+
+### Backgrounds
+- Default: #F5F5F5
+- Paper: #FFFFFF
+- Code Editor (Light Mode): #f5f5f5
+- Mind Map: #f8f9fa
 
 ### Semantic Colors
-- **Error**: `#B00020`
-- **Success**: `#4CAF50`
-- **Warning**: `#FFC107`
-- **Info**: `#2196F3`
+- Error: #B00020
+- Success: #4CAF50
+- Warning: #FFC107
+- Info: #2196F3
 
 ### Text Colors
-- Primary: `#212121`
-- Secondary: `#757575`
-- Disabled: `#BDBDBD`
-- Placeholder: Secondary with 70% opacity
+- Primary: #212121
+- Secondary: #757575
+- Disabled: #BDBDBD
+- Placeholder: Secondary @ 70% opacity
 
-## Typography
+## 🔤 Typography
 
-### Font Family
-- Primary: `"Roboto", "Helvetica", "Arial", sans-serif`
-- Monospace: `"Roboto Mono", monospace` (for code)
+### Font Families
+- Primary: "Roboto", "Helvetica", "Arial", sans-serif
+- Monospace: "Roboto Mono", monospace
 
 ### Font Sizes
-- H1: `2rem` (28px)
-- H2: `1.5rem` (24px)
-- H3: `1.25rem` (20px)
-- H4: `1.125rem` (18px)
-- H5: `1rem` (16px)
-- H6: `0.875rem` (14px)
-- Body 1: `0.875rem` (14px)
-- Body 2: `0.75rem` (12px)
-- Code: `0.9rem` (14.4px)
+
+| Type | Size |
+|------|------|
+| H1 | 2rem (28px) |
+| H2 | 1.5rem (24px) |
+| H3 | 1.25rem (20px) |
+| H4 | 1.125rem (18px) |
+| H5 | 1rem (16px) |
+| H6 | 0.875rem (14px) |
+| Body 1 | 0.875rem (14px) |
+| Body 2 | 0.75rem (12px) |
+| Code | 0.9rem (14.4px) |
 
 ### Font Weights
 - Regular: 400
 - Medium: 500
 - Bold: 700
 
-## Spacing
-- Base Unit: 8px
-- Spacing Scale: Multiples of 8px
-- Container Padding: 16px (2 units)
-- Component Spacing: 16px (2 units)
-- Grid Gutter: 24px (3 units)
-- Mobile Padding: 8px (1 unit)
-- Desktop Padding: 16px (2 units)
+## 📐 Spacing
 
-## Components
+- Base Unit: 8px
+- Scale: Multiples of base unit
+
+### Common Layouts:
+- Container/Component Padding: 16px (2 units)
+- Grid Gutter: 24px (3 units)
+- Mobile Padding: 8px
+- Desktop Padding: 16px
+
+## 🧩 Components
 
 ### App Bar
 - Height: 60px
-- Background: Primary Blue (`#6098CC`)
-- Text Color: White
-- Shadow: `0px 2px 4px rgba(0, 0, 0, 0.2)`
-- Mobile Padding: 8px
-- Desktop Padding: 16px
+- Background: Primary Blue
+- Text: White
+- Shadow: 0px 2px 4px rgba(0,0,0,0.2)
+- Padding: 8px (mobile) / 16px (desktop)
 
 ### Buttons
 - Border Radius: 8px
 - Text Transform: None
 - Font Weight: 500
-- Hover State: 4% opacity of primary color
-- Disabled State: 38% opacity
-- Loading State: Circular progress indicator
-- Touch Target: 44px × 44px minimum
+- Hover: 4% opacity overlay
+- Disabled: 38% opacity
+- Loading: Circular progress (24px)
+- Minimum Touch Target: 44px × 44px
 
-### Cards/Papers
-- Border Radius: 8px
-- Shadow: `0px 2px 4px -1px rgba(0,0,0,0.1), 0px 4px 5px 0px rgba(0,0,0,0.07), 0px 1px 10px 0px rgba(0,0,0,0.06)`
-- Background: Paper color (`#FFFFFF`)
-- Hover State: Elevation increase
-- Active State: Elevation decrease
+### Cards / Papers
+- Radius: 8px
+- Shadow: Subtle layered shadow
+- Background: Paper (#FFFFFF)
+- Hover: Slight elevation increase
+- Active: Slight elevation decrease
 
 ### Input Fields
 - Border Radius: 8px
-- Focus State: Primary color outline
-- Placeholder Color: Secondary text color with 70% opacity
-- Disabled State: 38% opacity
-- Error State: Red outline and helper text
+- Focus: Primary-colored outline
+- Placeholder: Secondary text @ 70% opacity
+- Disabled: 38% opacity
+- Error: Red outline + helper text
 
 ### Drawer
 - Width: 220px
-- Background: Paper color (`#FFFFFF`)
-- Border: 1px solid divider color
+- Background: Paper
+- Border: 1px solid divider
 - Shadow: None
-- Mobile: Temporary drawer
-- Desktop: Persistent drawer
-
-### Mind Map Components
-- Node:
-  - Root Node: `#e3f2fd` background
-  - Regular Node: White background
-  - Selected: 2px solid primary color
-  - Hover: Elevation increase
-  - Edit Indicator: Green dot (8px)
-- Edge:
-  - Color: `#90caf9`
-  - Border: 2px solid `#1976d2`
-- Background: Dots pattern
-- Grid: 15px × 15px snap grid
-
-### Code Editor
-- Background: `#f5f5f5` (light mode)
-- Font: Roboto Mono
-- Font Size: 0.9rem
-- Line Height: 1.5
-- Padding: 16px
-- Border: None
-- Placeholder: Secondary text with 70% opacity
+- Mobile: Temporary
+- Desktop: Persistent
 
 ### Tags
-- Background: `primary.50`
-- Text Color: `primary.main`
+- Background: Primary.50
+- Text Color: Primary
 - Padding: 4px 8px
 - Border Radius: 4px
 - Margin Right: 8px
 
-## Layout
+## 🧠 Mind Map Components
 
-### Grid System
-- Breakpoints:
-  - xs: 0px
-  - sm: 600px
-  - md: 900px
-  - lg: 1200px
-  - xl: 1536px
+### Nodes
+- Root Node: #e3f2fd
+- Regular Node: #ffffff
+- Selected: 2px solid Primary
+- Hover: Elevation increase
+- Edit Indicator: Green dot (8px)
+
+### Edges
+- Color: #90caf9
+- Border: 2px solid #1976d2
+
+### Background
+- Pattern: Dots
+- Snap Grid: 15px × 15px
+
+## 💻 Code Editor
+- Background: #f5f5f5
+- Font: Roboto Mono, 0.9rem, 1.5 line-height
+- Padding: 16px
+- Border: None
+- Placeholder: Secondary text @ 70% opacity
+
+## 📐 Layout & Grid
+
+### Grid System (MUI Breakpoints)
+
+| Label | Width |
+|-------|-------|
+| xs | 0px |
+| sm | 600px |
+| md | 900px |
+| lg | 1200px |
+| xl | 1536px |
 
 ### Container
 - Max Width: 1200px
-- Padding: 16px (2 units)
-- Mobile: Full width
-- Desktop: Centered with max-width
+- Padding: 16px
+- Full width on mobile, centered on desktop
 
-## Interactive States
+## 🚦 Interactive States
 
-### Hover States
-- Buttons: 4% opacity of primary color
+### Hover
+- Buttons: 4% primary overlay
 - Cards: Elevation increase
-- Links: Underline on hover
-- Icons: Background color change
-- Tags: Slight elevation increase
+- Links: Underline
+- Icons: Background highlight
+- Tags: Slight elevation
 
-### Focus States
-- Outline: 2px solid primary color
-- Outline Offset: 2px
-- Input Fields: Primary color outline
-- Buttons: Primary color outline
+### Focus
+- Outline: 2px solid primary
+- Offset: 2px
+- Inputs/Buttons: Primary outline
 
-### Active States
-- Buttons: 12% opacity of primary color
+### Active
+- Buttons: 12% opacity overlay
 - Cards: Elevation decrease
-- Icons: Slight scale down
+- Icons: Slight scale-down
 
-### Loading States
-- Circular Progress: 24px size
-- Inherit color from parent
-- Full width buttons show progress
-- Disabled state during loading
+### Loading
+- Circular progress: 24px
+- Color: Inherit from parent
+- Buttons: Full-width spinner
+- Disabled during load
 
-## Accessibility
+## ♿ Accessibility
 
-### Color Contrast
-- Text on Primary: 4.5:1 minimum
-- Text on Paper: 4.5:1 minimum
-- Interactive Elements: 3:1 minimum
-- Error States: 4.5:1 minimum
+### Text Contrast:
+- On Primary / Paper: 4.5:1+
+- Interactive Elements: 3:1+
+- Error States: 4.5:1+
 
-### Focus Indicators
-- Visible outline on all interactive elements
-- High contrast focus rings
-- Keyboard navigation support
-- ARIA labels for icons
+### Focus Indicators:
+- Visible outlines on all interactives
+- High contrast rings
+- Full keyboard nav support
+- ARIA labels on icons
 
-## Brand Elements
+## 🔖 Branding & Iconography
 
-### Logo Treatment
-- Primary Font: Roboto Bold
-- Secondary Font: Roboto Mono
-- Icon: AutoStoriesOutlined (Material-UI)
-- Tagline: `</>` (code brackets)
-- Size: 20px (primary), 16px (tagline)
+### Logo
+- Fonts: Roboto Bold (primary), Roboto Mono (secondary)
+- Icon: AutoStoriesOutlined
+- Tagline: </>
+- Size: 20px logo, 16px tagline
 
-### Iconography
-- Material-UI Icons
-- Size: 24px (default)
-- Color: Primary or secondary text color
-- Interactive: Hover state with background
-- Disabled: 38% opacity
+### Icons
+- Source: Material-UI
+- Size: 24px
+- Color: Primary/Secondary text
+- States:
+  - Hover: Background highlight
+  - Disabled: 38% opacity
 
-## Responsive Design
+## 📱 Responsive Design
 
-### Mobile First
-- Base styles for mobile
-- Progressive enhancement for larger screens
-- Touch targets: minimum 44px × 44px
-- Full-width containers on mobile
-- Stacked layouts on mobile
+### Principles
+- Mobile-first base styles
+- Progressive enhancement
+- Min touch target: 44px x 44px
 
-### Breakpoint Behavior
-- Drawer: Collapses to hamburger menu below sm
-- Typography: Scales down on mobile
-- Spacing: Reduces on mobile
-- Inputs: Full width on mobile
-- Buttons: Full width on mobile
+### Behavior by Breakpoint
+- Drawer: Collapses to hamburger below sm
+- Typography: Scales down on smaller screens
+- Inputs & Buttons: Full width on mobile
+- Spacing: Tighter on mobile
 - Containers: No max-width on mobile
 
-## Implementation Notes
+## ⚙️ Implementation Notes
 
-### Material-UI Integration
-- Theme Provider wrapper
-- Custom theme overrides
-- Component style overrides
-- Global styles for consistency
-- CSS-in-JS with sx prop
+### MUI Integration
+- Wrap app in ThemeProvider
+- Use theme overrides for components
+- Use global styles for layout consistency
+- Leverage MUI's sx prop for scoped styles
 
-### CSS-in-JS
-- Use MUI's `sx` prop for component-specific styles
-- Use theme spacing function for consistent spacing
-- Use theme color palette for consistent colors
-- Use theme breakpoints for responsive design
-- Use theme transitions for animations
+### CSS-in-JS Best Practices
+- Use theme.spacing() for layout
+- Use theme.palette for color consistency
+- Use breakpoints for responsive tweaks
+- Use theme.transitions for animations
 
-### Best Practices
-1. Always use theme values for colors, spacing, and typography
-2. Maintain consistent component hierarchy
-3. Follow mobile-first responsive design
-4. Ensure proper contrast ratios
-5. Use semantic HTML elements
-6. Implement proper focus management
-7. Test across all breakpoints
-8. Use proper ARIA labels
-9. Implement loading states
-10. Handle disabled states consistently
+## ✅ Best Practices Checklist
+- Use theme values (colors, spacing, typography)
+- Maintain consistent hierarchy & component naming
+- Follow mobile-first design
+- Ensure WCAG contrast ratios
+- Use semantic HTML
+- Manage focus correctly
+- Test at all breakpoints
+- Add ARIA labels
+- Handle loading states gracefully
+- Apply consistent disabled states
+
+## 📐 Required Layout Pattern for All GeekSuite Apps
+
+### Header
+- Height: ~60px
+- Background: Primary Blue
+- Text: White
+- Contents:
+  - Left: Hamburger menu
+  - Middle: App icon + name styled as AppGeek
+  - Right: </> tagline
+- Navigation inside drawer (triggered by hamburger)
+
+### View Area
+- Background: Very light grey
+- Scroll behavior:
+  - Single item: no scroll (internal scroll if needed)
+  - Multiple items: scrollable view with 1rem padding
+- Content in cards:
+  - White background
+  - Dark grey text
+  - 1rem margin inside view box
+  - Rounded corners
+
+### Bottom Navigation Bar
+- Height: similar to header
+- Background: White
+- Icons: Dark grey, active = theme blue
