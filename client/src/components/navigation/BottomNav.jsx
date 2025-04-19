@@ -25,10 +25,11 @@ const views = [
 const BottomNav = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const currentView = location.pathname.split('/')[1] || 'daily';
+  const pathParts = location.pathname.split('/');
+  const currentView = pathParts[2] || 'daily';
 
   const handleChange = (event, newValue) => {
-    navigate(`/${newValue}`);
+    navigate(`/tasks/${newValue}`);
   };
 
   return (

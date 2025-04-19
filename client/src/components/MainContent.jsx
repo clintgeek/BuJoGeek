@@ -7,9 +7,24 @@ import TasksPage from '../pages/TasksPage';
 import TemplatesPage from '../pages/TemplatesPage';
 import QuickEntry from './tasks/QuickEntry';
 import ProtectedRoute from './ProtectedRoute';
+import { useState, useEffect } from 'react';
 
 const MainContent = () => {
   const { user, logout } = useAuth();
+  const [quickEntryOpen, setQuickEntryOpen] = useState(false);
+
+  // Add keyboard shortcut handler
+  useEffect(() => {
+    const handleKeyPress = (event) => {
+      if ((event.metaKey || event.ctrlKey) && event.key === 'k') {
+        event.preventDefault();
+        setQuickEntryOpen(true);
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyPress);
+    return () => document.removeEventListener('keydown', handleKeyPress);
+  }, []);
 
   return (
     <Box sx={{
@@ -141,7 +156,7 @@ const MainContent = () => {
         </Routes>
       </Container>
 
-      {user && <QuickEntry />}
+      {user && <QuickEntry open={quickEntryOpen} onClose={() => setQuickEntryOpen(false)} />}
     </Box>
   );
 };

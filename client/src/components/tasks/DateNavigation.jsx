@@ -71,6 +71,12 @@ const DateNavigation = ({ currentDate, onDateChange }) => {
                 color="primary"
                 size="small"
                 onClick={() => setIsEditorOpen(true)}
+                sx={{
+                  boxShadow: 'none',
+                  '&:hover': {
+                    boxShadow: 'none'
+                  }
+                }}
               >
                 <AddIcon />
               </Fab>

@@ -148,22 +148,45 @@ const TaskProvider = ({ children }) => {
     }
   }, []);
 
+  const fetchAllTasks = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const token = localStorage.getItem('token');
+      console.log('Token:', token);
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+      const response = await axios.get(`${API_URL}/tasks/all`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+      setTasks(response.data);
+    } catch (err) {
+      setError(err.message);
+      console.error('Error fetching all tasks:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   const createTask = useCallback(async (taskData) => {
     try {
       setLoading(true);
       setError(null);
       const token = localStorage.getItem('token');
+
+      // Don't set a default due date - let tasks be unscheduled by default
       const response = await axios.post(`${API_URL}/tasks`, taskData, {
         headers: {
           Authorization: `Bearer ${token}`
         }
       });
-      setTasks(prev => [response.data, ...prev]);
-      return response.data;
+      setTasks(prev => [...prev, response.data]);
     } catch (err) {
       setError(err.message);
       console.error('Error creating task:', err);
-      throw err;
     } finally {
       setLoading(false);
     }
@@ -201,6 +224,7 @@ const TaskProvider = ({ children }) => {
     fetchWeeklyTasks,
     fetchMonthlyTasks,
     fetchYearlyTasks,
+    fetchAllTasks,
     createTask,
     deleteTask
   };

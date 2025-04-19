@@ -15,7 +15,8 @@ import {
   getBacklogTasks,
   migrateTaskToBacklog,
   migrateTaskToFuture,
-  carryForwardTask
+  carryForwardTask,
+  getAllTasks
 } from '../controllers/taskController.js';
 
 const router = express.Router();
@@ -24,6 +25,9 @@ const router = express.Router();
 router.use(authenticate);
 
 // Base route: /api/tasks
+
+// Get all tasks in chronological order (must come before /:id routes)
+router.get('/all', getAllTasks);
 
 // Time-based views
 router.get('/daily', getDailyTasks);
@@ -34,20 +38,20 @@ router.get('/yearly', getYearlyTasks);
 // Backlog routes
 router.get('/backlog', getBacklogTasks);
 
+// Task CRUD operations
+router.post('/', createTask);
+router.get('/', getTasks);
+
+// Task-specific operations
+router.get('/:id', getTaskById);
+router.put('/:id', updateTask);
+router.delete('/:id', deleteTask);
+router.patch('/:id/status', updateTaskStatus);
+router.post('/:id/subtasks', addSubtask);
+
 // Migration routes
 router.post('/:id/migrate-back', migrateTaskToBacklog);
 router.post('/:id/migrate-future', migrateTaskToFuture);
 router.post('/:id/carry-forward', carryForwardTask);
-
-// Task CRUD operations
-router.post('/', createTask);
-router.get('/', getTasks);
-router.get('/:id', getTaskById);
-router.put('/:id', updateTask);
-router.delete('/:id', deleteTask);
-
-// Task-specific operations
-router.patch('/:id/status', updateTaskStatus);
-router.post('/:id/subtasks', addSubtask);
 
 export default router;

@@ -18,25 +18,11 @@ import QuickEntry from '../tasks/QuickEntry';
 
 const DailyLog = () => {
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const [quickEntryOpen, setQuickEntryOpen] = useState(false);
   const { tasks, fetchDailyTasks } = useTaskContext();
 
   useEffect(() => {
     fetchDailyTasks(selectedDate);
   }, [selectedDate, fetchDailyTasks]);
-
-  // Add keyboard shortcut handler
-  useEffect(() => {
-    const handleKeyPress = (event) => {
-      if ((event.metaKey || event.ctrlKey) && event.key === 'k') {
-        event.preventDefault();
-        setQuickEntryOpen(true);
-      }
-    };
-
-    document.addEventListener('keydown', handleKeyPress);
-    return () => document.removeEventListener('keydown', handleKeyPress);
-  }, []);
 
   const handlePreviousDay = () => {
     setSelectedDate(prev => subDays(prev, 1));
@@ -144,11 +130,6 @@ const DailyLog = () => {
             selectedDate={selectedDate}
           />
         </Box>
-
-        <QuickEntry
-          open={quickEntryOpen}
-          onClose={() => setQuickEntryOpen(false)}
-        />
       </Paper>
     </Box>
   );

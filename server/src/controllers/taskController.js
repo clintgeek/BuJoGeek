@@ -195,30 +195,20 @@ export const getDailyTasks = async (req, res) => {
     const query = {
       createdBy: req.user._id,
       $or: [
-        // Tasks created today
-        {
-          createdAt: {
-            $gte: startOfDay,
-            $lte: endOfDay
-          }
-        },
-        // Uncompleted tasks from yesterday
-        {
-          createdAt: {
-            $gte: new Date(startOfDay.getTime() - 24 * 60 * 60 * 1000),
-            $lt: startOfDay
-          },
-          status: 'pending'
-        },
         // Tasks scheduled for today
         {
           dueDate: {
             $gte: startOfDay,
             $lte: endOfDay
           }
+        },
+        // Unscheduled tasks (no due date) that are pending
+        {
+          dueDate: null,
+          status: 'pending',
+          isBacklog: false
         }
-      ],
-      isBacklog: false
+      ]
     };
 
     const tasks = await Task.find(query).sort({ createdAt: -1 });
@@ -404,6 +394,49 @@ export const getMonthlyTasks = async (req, res) => {
       .sort({ dueDate: 1, createdAt: -1 });
 
     res.json(tasks);
+  } catch (error) {
+    handleError(res, error);
+  }
+};
+
+// Get all tasks in chronological order
+export const getAllTasks = async (req, res) => {
+  try {
+    const query = {
+      createdBy: req.user._id,
+      isBacklog: false
+    };
+
+    const tasks = await Task.find(query)
+      .sort({
+        // First sort by due date (null values last)
+        dueDate: 1,
+        // Then sort by creation date (newest first)
+        createdAt: -1
+      });
+
+    // Group tasks into future, current, and past
+    const now = new Date();
+    const groupedTasks = {
+      future: [],
+      current: [],
+      past: []
+    };
+
+    tasks.forEach(task => {
+      if (!task.dueDate) {
+        // Unscheduled tasks go in current
+        groupedTasks.current.push(task);
+      } else if (task.dueDate > now) {
+        groupedTasks.future.push(task);
+      } else if (task.dueDate < now) {
+        groupedTasks.past.push(task);
+      } else {
+        groupedTasks.current.push(task);
+      }
+    });
+
+    res.json(groupedTasks);
   } catch (error) {
     handleError(res, error);
   }
