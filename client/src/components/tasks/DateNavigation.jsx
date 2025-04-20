@@ -5,14 +5,12 @@ import {
   Box,
   Typography,
   IconButton,
-  Tooltip,
-  Fab
+  Tooltip
 } from '@mui/material';
 import {
   NavigateBefore as NavigateBeforeIcon,
   NavigateNext as NavigateNextIcon,
-  CalendarToday as CalendarIcon,
-  Add as AddIcon
+  CalendarToday as CalendarIcon
 } from '@mui/icons-material';
 import { format, addDays } from 'date-fns';
 import TaskEditor from './TaskEditor';
@@ -65,22 +63,6 @@ const DateNavigation = ({ currentDate, onDateChange }) => {
                 <NavigateNextIcon />
               </IconButton>
             </Box>
-
-            <Tooltip title="Add Task">
-              <Fab
-                color="primary"
-                size="small"
-                onClick={() => setIsEditorOpen(true)}
-                sx={{
-                  boxShadow: 'none',
-                  '&:hover': {
-                    boxShadow: 'none'
-                  }
-                }}
-              >
-                <AddIcon />
-              </Fab>
-            </Tooltip>
           </Box>
         </CardContent>
       </Card>

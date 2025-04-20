@@ -191,6 +191,7 @@ const TaskCard = ({ task, onEdit }) => {
                   <ScheduleIcon fontSize="small" sx={{ mr: 0.5 }} />
                   <Typography variant="body2" component="span">
                     {format(new Date(task.dueDate), 'EEE, MMM d, yyyy h:mm a')}
+                    {task.signifier === '@' && ' (event)'}
                   </Typography>
                 </Box>
               )}

@@ -9,8 +9,12 @@ import theme from './theme/theme';
 import AppLayout from './components/layout/AppLayout';
 import MainContent from './components/MainContent';
 import BottomNav from './components/navigation/BottomNav';
+import TaskEditor from './components/tasks/TaskEditor';
+import { useState } from 'react';
 
 function App() {
+  const [isEditorOpen, setIsEditorOpen] = useState(false);
+
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
@@ -21,9 +25,14 @@ function App() {
               <AppLayout
                 title="BuJo"
                 icon={AssignmentIcon}
-                navigation={<BottomNav />}
+                navigation={<BottomNav onAddClick={() => setIsEditorOpen(true)} />}
               >
                 <MainContent />
+                <TaskEditor
+                  open={isEditorOpen}
+                  onClose={() => setIsEditorOpen(false)}
+                  task={null}
+                />
               </AppLayout>
             </Router>
           </TaskProvider>

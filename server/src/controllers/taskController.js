@@ -409,34 +409,59 @@ export const getAllTasks = async (req, res) => {
 
     const tasks = await Task.find(query)
       .sort({
-        // First sort by due date (null values last)
-        dueDate: 1,
-        // Then sort by creation date (newest first)
+        dueDate: -1,
         createdAt: -1
       });
 
-    // Group tasks into future, current, and past
-    const now = new Date();
-    const groupedTasks = {
-      future: [],
-      current: [],
-      past: []
-    };
+    // Group tasks by date
+    const groupedTasks = tasks.reduce((acc, task) => {
+      let dateKey;
 
-    tasks.forEach(task => {
-      if (!task.dueDate) {
-        // Unscheduled tasks go in current
-        groupedTasks.current.push(task);
-      } else if (task.dueDate > now) {
-        groupedTasks.future.push(task);
-      } else if (task.dueDate < now) {
-        groupedTasks.past.push(task);
+      if (task.dueDate) {
+        // For scheduled tasks, extract the displayed date as shown to users
+        const dueDate = new Date(task.dueDate);
+
+        // Use local date components for consistent grouping
+        const year = dueDate.getFullYear();
+        const month = String(dueDate.getMonth() + 1).padStart(2, '0');
+        const day = String(dueDate.getDate()).padStart(2, '0');
+        dateKey = `${year}-${month}-${day}`;
+      } else if (task.status === 'completed') {
+        // For completed items, use the completion date
+        const completedDate = new Date(task.updatedAt);
+
+        // Using local date components for consistency
+        const year = completedDate.getFullYear();
+        const month = String(completedDate.getMonth() + 1).padStart(2, '0');
+        const day = String(completedDate.getDate()).padStart(2, '0');
+        dateKey = `${year}-${month}-${day}`;
       } else {
-        groupedTasks.current.push(task);
-      }
-    });
+        // For unscheduled, incomplete items, use today's date
+        const today = new Date();
 
-    res.json(groupedTasks);
+        // Using local date components for consistency
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0');
+        const day = String(today.getDate()).padStart(2, '0');
+        dateKey = `${year}-${month}-${day}`;
+      }
+
+      if (!acc[dateKey]) {
+        acc[dateKey] = [];
+      }
+      acc[dateKey].push(task);
+      return acc;
+    }, {});
+
+    // Sort dates in reverse chronological order (newest/future dates first)
+    const sortedEntries = Object.entries(groupedTasks)
+      .sort(([dateA], [dateB]) => {
+        return new Date(dateB) - new Date(dateA);
+      });
+
+    const sortedGroupedTasks = Object.fromEntries(sortedEntries);
+
+    res.json(sortedGroupedTasks);
   } catch (error) {
     handleError(res, error);
   }

@@ -10,7 +10,8 @@ import {
   ViewModule as ViewModuleIcon,
   CalendarViewWeek as CalendarViewWeekIcon,
   CalendarViewMonth as CalendarViewMonthIcon,
-  CalendarToday as CalendarTodayIcon
+  CalendarToday as CalendarTodayIcon,
+  Add as AddIcon
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 
@@ -22,13 +23,18 @@ const views = [
   { value: 'year', label: 'Year', icon: ViewModuleIcon }
 ];
 
-const BottomNav = () => {
+const BottomNav = ({ onAddClick }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const pathParts = location.pathname.split('/');
   const currentView = pathParts[2] || 'daily';
 
   const handleChange = (event, newValue) => {
+    // Handle special case for add button
+    if (newValue === 'add') {
+      if (onAddClick) onAddClick();
+      return;
+    }
     navigate(`/tasks/${newValue}`);
   };
 
@@ -56,6 +62,15 @@ const BottomNav = () => {
             icon={<view.icon />}
           />
         ))}
+        <BottomNavigationAction
+          label="Add"
+          value="add"
+          icon={<AddIcon />}
+          onClick={(e) => {
+            e.preventDefault();
+            if (onAddClick) onAddClick();
+          }}
+        />
       </BottomNavigation>
     </Paper>
   );
