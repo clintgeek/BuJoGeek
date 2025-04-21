@@ -6,8 +6,19 @@ export const createTask = async (req, res) => {
   try {
     const taskData = {
       ...req.body,
-      createdBy: req.user._id // Will be set by auth middleware later
+      createdBy: req.user._id
     };
+
+    // If custom dates are provided, use them
+    if (req.body.createdAt) {
+      taskData.createdAt = new Date(req.body.createdAt);
+    }
+    if (req.body.dueDate) {
+      taskData.dueDate = new Date(req.body.dueDate);
+    }
+    if (req.body.updatedAt) {
+      taskData.updatedAt = new Date(req.body.updatedAt);
+    }
 
     const task = new Task(taskData);
     await task.save();
@@ -191,6 +202,8 @@ export const getDailyTasks = async (req, res) => {
     const date = req.query.date ? new Date(req.query.date) : new Date();
     const startOfDay = new Date(date.setHours(0, 0, 0, 0));
     const endOfDay = new Date(date.setHours(23, 59, 59, 999));
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
     const query = {
       createdBy: req.user._id,
@@ -207,6 +220,17 @@ export const getDailyTasks = async (req, res) => {
           dueDate: null,
           status: 'pending',
           isBacklog: false
+        },
+        // Past due tasks that should float to today
+        {
+          status: 'pending',
+          isBacklog: false,
+          dueDate: { $lt: today },
+          $expr: {
+            $and: [
+              { $eq: [startOfDay, today] }
+            ]
+          }
         }
       ]
     };
@@ -339,29 +363,92 @@ export const carryForwardTask = async (req, res) => {
 export const getWeeklyTasks = async (req, res) => {
   try {
     const { startDate, endDate } = req.query;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    console.log('\n=== Weekly Tasks Query ===');
+    console.log(`Start Date: ${startDate}`);
+    console.log(`End Date: ${endDate}`);
+    console.log(`Today: ${today.toISOString()}`);
+
     const query = {
       createdBy: req.user._id,
       $or: [
+        // Tasks with future due dates within the week
         {
           dueDate: {
+            $gte: today,
+            $lte: new Date(endDate)
+          },
+          status: 'pending'
+        },
+        // Completed tasks that were completed within the week
+        {
+          status: 'completed',
+          updatedAt: {
             $gte: new Date(startDate),
             $lte: new Date(endDate)
           }
         },
+        // Floating tasks: incomplete tasks with no due date OR past due date
+        // These only show up if today falls within the requested week
         {
-          createdAt: {
-            $gte: new Date(startDate),
-            $lte: new Date(endDate)
-          }
+          status: 'pending',
+          isBacklog: false,
+          $or: [
+            { dueDate: null },
+            { dueDate: { $lt: today } }
+          ],
+          $and: [
+            {
+              $expr: {
+                $and: [
+                  { $gte: [today, new Date(startDate)] },
+                  { $lte: [today, new Date(endDate)] }
+                ]
+              }
+            }
+          ]
         }
       ]
     };
+
+    console.log('\nQuery Conditions:');
+    console.log(JSON.stringify(query, null, 2));
 
     const tasks = await Task.find(query)
       .populate('parentTask', 'content status')
       .sort({ dueDate: 1, createdAt: -1 });
 
-    res.json(tasks);
+    // Modify the tasks to set their display date to today if they are floating
+    const modifiedTasks = tasks.map(task => {
+      const taskDueDate = task.dueDate ? new Date(task.dueDate) : null;
+      if (task.status === 'pending' && (taskDueDate === null || taskDueDate < today)) {
+        // Create a new task object with the display date set to today
+        return {
+          ...task.toObject(),
+          displayDate: today
+        };
+      }
+      return task;
+    });
+
+    console.log('\nFound Tasks:');
+    modifiedTasks.forEach(task => {
+      const taskDueDate = task.dueDate ? new Date(task.dueDate) : null;
+      const taskUpdatedAt = new Date(task.updatedAt);
+      console.log(`\nTask: ${task.content}`);
+      console.log(`- Due Date: ${taskDueDate ? taskDueDate.toISOString() : 'None'}`);
+      console.log(`- Display Date: ${task.displayDate ? task.displayDate.toISOString() : 'None'}`);
+      console.log(`- Status: ${task.status}`);
+      console.log(`- Updated At: ${taskUpdatedAt.toISOString()}`);
+      console.log(`- Is Backlog: ${task.isBacklog}`);
+      console.log(`- Is Past Due: ${taskDueDate ? taskDueDate < today : 'N/A'}`);
+      console.log(`- Is Future: ${taskDueDate ? taskDueDate > today : 'N/A'}`);
+      console.log(`- Completion Date: ${task.status === 'completed' ? taskUpdatedAt.toISOString() : 'N/A'}`);
+    });
+
+    res.json(modifiedTasks);
   } catch (error) {
     handleError(res, error);
   }
@@ -416,30 +503,37 @@ export const getAllTasks = async (req, res) => {
     // Group tasks by date
     const groupedTasks = tasks.reduce((acc, task) => {
       let dateKey;
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
 
       if (task.dueDate) {
-        // For scheduled tasks, extract the displayed date as shown to users
         const dueDate = new Date(task.dueDate);
+        dueDate.setHours(0, 0, 0, 0);
 
-        // Use local date components for consistent grouping
-        const year = dueDate.getFullYear();
-        const month = String(dueDate.getMonth() + 1).padStart(2, '0');
-        const day = String(dueDate.getDate()).padStart(2, '0');
-        dateKey = `${year}-${month}-${day}`;
+        // For pending tasks with past due dates, use today's date
+        if (task.status === 'pending' && dueDate < today) {
+          const year = today.getFullYear();
+          const month = String(today.getMonth() + 1).padStart(2, '0');
+          const day = String(today.getDate()).padStart(2, '0');
+          dateKey = `${year}-${month}-${day}`;
+        } else {
+          // For scheduled tasks, use their due date
+          const year = dueDate.getFullYear();
+          const month = String(dueDate.getMonth() + 1).padStart(2, '0');
+          const day = String(dueDate.getDate()).padStart(2, '0');
+          dateKey = `${year}-${month}-${day}`;
+        }
       } else if (task.status === 'completed') {
         // For completed items, use the completion date
         const completedDate = new Date(task.updatedAt);
+        completedDate.setHours(0, 0, 0, 0);
 
-        // Using local date components for consistency
         const year = completedDate.getFullYear();
         const month = String(completedDate.getMonth() + 1).padStart(2, '0');
         const day = String(completedDate.getDate()).padStart(2, '0');
         dateKey = `${year}-${month}-${day}`;
       } else {
         // For unscheduled, incomplete items, use today's date
-        const today = new Date();
-
-        // Using local date components for consistency
         const year = today.getFullYear();
         const month = String(today.getMonth() + 1).padStart(2, '0');
         const day = String(today.getDate()).padStart(2, '0');

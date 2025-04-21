@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import axios from 'axios';
+import { format } from 'date-fns';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
 
@@ -177,16 +178,71 @@ const TaskProvider = ({ children }) => {
       setError(null);
       const token = localStorage.getItem('token');
 
-      // Don't set a default due date - let tasks be unscheduled by default
       const response = await axios.post(`${API_URL}/tasks`, taskData, {
         headers: {
           Authorization: `Bearer ${token}`
         }
       });
-      setTasks(prev => [...prev, response.data]);
+
+      setTasks(prev => {
+        // Handle both array and object structures
+        if (Array.isArray(prev)) {
+          return [...prev, response.data];
+        } else if (typeof prev === 'object' && prev !== null) {
+          // Handle grouped tasks by date
+          const newTask = response.data;
+          const taskDate = new Date(newTask.dueDate || newTask.updatedAt || newTask.createdAt);
+          const dateKey = format(taskDate, 'yyyy-MM-dd');
+
+          const newTasks = { ...prev };
+          if (!newTasks[dateKey]) {
+            newTasks[dateKey] = [];
+          }
+          newTasks[dateKey].push(newTask);
+          return newTasks;
+        }
+        return [response.data];
+      });
     } catch (err) {
       setError(err.message);
       console.error('Error creating task:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const updateTask = useCallback(async (taskId, taskData) => {
+    try {
+      setLoading(true);
+      setError(null);
+      const token = localStorage.getItem('token');
+      const response = await axios.put(`${API_URL}/tasks/${taskId}`, taskData, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+
+      setTasks(prev => {
+        // Handle both array and object structures
+        if (Array.isArray(prev)) {
+          return prev.map(task => task._id === taskId ? response.data : task);
+        } else if (typeof prev === 'object' && prev !== null) {
+          // Handle grouped tasks by date
+          const newTasks = {};
+          Object.entries(prev).forEach(([date, tasks]) => {
+            const updatedTasks = tasks.map(task => task._id === taskId ? response.data : task);
+            if (updatedTasks.length > 0) {
+              newTasks[date] = updatedTasks;
+            }
+          });
+          return newTasks;
+        }
+        return prev;
+      });
+    } catch (err) {
+      setError(err.message);
+      console.error('Error updating task:', err);
+      throw err;
     } finally {
       setLoading(false);
     }
@@ -202,7 +258,23 @@ const TaskProvider = ({ children }) => {
           Authorization: `Bearer ${token}`
         }
       });
-      setTasks(prev => prev.filter(task => task._id !== taskId));
+      setTasks(prev => {
+        // Handle both array and object structures
+        if (Array.isArray(prev)) {
+          return prev.filter(task => task._id !== taskId);
+        } else if (typeof prev === 'object' && prev !== null) {
+          // Handle grouped tasks by date
+          const newTasks = {};
+          Object.entries(prev).forEach(([date, tasks]) => {
+            const filteredTasks = tasks.filter(task => task._id !== taskId);
+            if (filteredTasks.length > 0) {
+              newTasks[date] = filteredTasks;
+            }
+          });
+          return newTasks;
+        }
+        return prev;
+      });
     } catch (err) {
       setError(err.message);
       console.error('Error deleting task:', err);
@@ -226,6 +298,7 @@ const TaskProvider = ({ children }) => {
     fetchYearlyTasks,
     fetchAllTasks,
     createTask,
+    updateTask,
     deleteTask
   };
 

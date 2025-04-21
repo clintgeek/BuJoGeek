@@ -5,7 +5,11 @@ import TaskList from '../components/tasks/TaskList';
 import TaskEditor from '../components/tasks/TaskEditor';
 import DateNavigation from '../components/tasks/DateNavigation';
 import QuickEntry from '../components/tasks/QuickEntry';
+import WeeklyLog from '../components/weekly/WeeklyLog';
+import MonthlyLog from '../components/monthly/MonthlyLog';
+import YearlyLog from '../components/yearly/YearlyLog';
 import { useTaskContext } from '../context/TaskContext';
+import TaskCreatorWithDates from '../components/tasks/TaskCreatorWithDates';
 
 const TasksPage = () => {
   const [isEditorOpen, setIsEditorOpen] = useState(false);
@@ -73,26 +77,43 @@ const TasksPage = () => {
     setSelectedTask(null);
   };
 
+  const renderView = () => {
+    switch (view) {
+      case 'weekly':
+        return <WeeklyLog />;
+      case 'monthly':
+        return <MonthlyLog />;
+      case 'year':
+        return <YearlyLog />;
+      default:
+        return (
+          <>
+            {view !== 'all' && (
+              <DateNavigation
+                currentDate={currentDate}
+                onDateChange={setCurrentDate}
+              />
+            )}
+            <TaskList
+              onEdit={(task) => {
+                setSelectedTask(task);
+                setIsEditorOpen(true);
+              }}
+              currentDate={currentDate}
+            />
+          </>
+        );
+    }
+  };
+
   return (
     <Box sx={{
       height: 'calc(100vh - 175px)', // Account for header and navigation
       display: 'flex',
       flexDirection: 'column',
     }}>
-      {view !== 'all' && (
-        <DateNavigation
-          currentDate={currentDate}
-          onDateChange={setCurrentDate}
-        />
-      )}
-
-      <TaskList
-        onEdit={(task) => {
-          setSelectedTask(task);
-          setIsEditorOpen(true);
-        }}
-        currentDate={currentDate}
-      />
+      <TaskCreatorWithDates />
+      {renderView()}
 
       <TaskEditor
         open={isEditorOpen}
