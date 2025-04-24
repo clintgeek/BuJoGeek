@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Box } from '@mui/material';
 import { useLocation } from 'react-router-dom';
 import TaskList from '../components/tasks/TaskList';
@@ -19,45 +19,59 @@ const TasksPage = () => {
   const { createTask, updateTask, fetchTasks, fetchDailyTasks, fetchWeeklyTasks, fetchMonthlyTasks, fetchYearlyTasks, fetchAllTasks } = useTaskContext();
   const location = useLocation();
   const view = location.pathname.split('/')[2] || 'daily';
+  const initialLoadRef = useRef({});
 
   useEffect(() => {
-    const startOfDay = new Date(currentDate);
-    startOfDay.setHours(0, 0, 0, 0);
+    // Always fetch for daily view or when switching views
+    if (view === 'daily' || !initialLoadRef.current[view]) {
+      // Mark this view as loaded
+      initialLoadRef.current[view] = true;
 
-    const endOfDay = new Date(currentDate);
-    endOfDay.setHours(23, 59, 59, 999);
-
-    switch (view) {
-      case 'daily':
-        fetchDailyTasks(currentDate);
-        break;
-      case 'weekly':
-        const weekStart = new Date(currentDate);
-        weekStart.setDate(currentDate.getDate() - currentDate.getDay());
-        const weekEnd = new Date(weekStart);
-        weekEnd.setDate(weekStart.getDate() + 6);
-        fetchWeeklyTasks(weekStart, weekEnd);
-        break;
-      case 'monthly':
-        const monthStart = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
-        const monthEnd = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
-        fetchMonthlyTasks(monthStart, monthEnd);
-        break;
-      case 'year':
-        const yearStart = new Date(currentDate.getFullYear(), 0, 1);
-        const yearEnd = new Date(currentDate.getFullYear(), 11, 31);
-        fetchYearlyTasks(yearStart, yearEnd);
-        break;
-      case 'all':
+      if (view === 'all') {
         fetchAllTasks();
-        break;
-      case 'backlog':
-        fetchTasks();
-        break;
-      default:
-        fetchDailyTasks(currentDate);
+        return;
+      }
+
+      const startOfDay = new Date(currentDate);
+      startOfDay.setHours(0, 0, 0, 0);
+
+      const endOfDay = new Date(currentDate);
+      endOfDay.setHours(23, 59, 59, 999);
+
+      switch (view) {
+        case 'daily':
+          fetchDailyTasks(currentDate);
+          break;
+        case 'weekly':
+          const weekStart = new Date(currentDate);
+          weekStart.setDate(currentDate.getDate() - currentDate.getDay());
+          const weekEnd = new Date(weekStart);
+          weekEnd.setDate(weekStart.getDate() + 6);
+          fetchWeeklyTasks(weekStart, weekEnd);
+          break;
+        case 'monthly':
+          const monthStart = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+          const monthEnd = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+          fetchMonthlyTasks(monthStart, monthEnd);
+          break;
+        case 'year':
+          const yearStart = new Date(currentDate.getFullYear(), 0, 1);
+          const yearEnd = new Date(currentDate.getFullYear(), 11, 31);
+          fetchYearlyTasks(yearStart, yearEnd);
+          break;
+        case 'backlog':
+          fetchTasks();
+          break;
+      }
     }
-  }, [view, currentDate, fetchTasks, fetchDailyTasks, fetchWeeklyTasks, fetchMonthlyTasks, fetchYearlyTasks, fetchAllTasks]);
+  }, [view, currentDate]); // Added currentDate as dependency
+
+  // Reset initialLoad when view changes
+  useEffect(() => {
+    return () => {
+      initialLoadRef.current = {};
+    };
+  }, []);
 
   const handleTaskCreate = async (taskData) => {
     await createTask(taskData);
@@ -112,7 +126,7 @@ const TasksPage = () => {
       display: 'flex',
       flexDirection: 'column',
     }}>
-      <TaskCreatorWithDates />
+      {/* <TaskCreatorWithDates /> */}
       {renderView()}
 
       <TaskEditor

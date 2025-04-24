@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { List, Box, Typography } from '@mui/material';
 import TaskCard from './TaskCard';
 import { useTaskContext } from '../../context/TaskContext';
@@ -6,21 +6,20 @@ import { useLocation } from 'react-router-dom';
 import { format, isValid } from 'date-fns';
 
 const TaskList = ({ onEdit, currentDate }) => {
-  const { tasks, loading, error, fetchTasks } = useTaskContext();
+  const { tasks, loading, error } = useTaskContext();
   const location = useLocation();
   const view = location.pathname.split('/')[2] || 'daily';
 
-  useEffect(() => {
-    const startOfDay = new Date(currentDate);
-    startOfDay.setHours(0, 0, 0, 0);
+  console.log('TaskList render:', {
+    view,
+    tasks: typeof tasks === 'object' ? Object.keys(tasks).length : 'not an object',
+    tasksContent: tasks,
+    loading,
+    error
+  });
 
-    const endOfDay = new Date(currentDate);
-    endOfDay.setHours(23, 59, 59, 999);
-
-    fetchTasks(startOfDay, endOfDay);
-  }, [currentDate, fetchTasks]);
-
-  if (loading) {
+  // Only show loading state when actually fetching
+  if (loading === 'fetching') {
     return (
       <Box sx={{ p: 2 }}>
         <Typography>Loading tasks...</Typography>
@@ -31,26 +30,37 @@ const TaskList = ({ onEdit, currentDate }) => {
   if (error) {
     return (
       <Box sx={{ p: 2 }}>
-        <Typography color="error">Error loading tasks: {error}</Typography>
+        <Typography color="error">Error loading tasks: {error.message}</Typography>
       </Box>
     );
   }
 
-  // Handle case when tasks data hasn't been loaded yet or is in wrong format
+  // Handle case when tasks data hasn't been loaded yet
   if (!tasks) {
     return (
       <Box sx={{ p: 2 }}>
-        <Typography>Loading tasks...</Typography>
+        <Typography>No tasks found</Typography>
       </Box>
     );
   }
 
+  // Handle different task formats based on view
   if (view === 'all') {
-    // Make sure tasks is an object before trying to access keys
-    if (typeof tasks !== 'object' || Array.isArray(tasks) || tasks === null) {
+    // For 'all' view, tasks should be an object with dates as keys
+    if (typeof tasks !== 'object') {
+      console.log('Tasks is not an object in all view:', tasks);
       return (
         <Box sx={{ p: 2 }}>
-          <Typography>Loading tasks...</Typography>
+          <Typography>Invalid tasks data format</Typography>
+        </Box>
+      );
+    }
+
+    if (Object.keys(tasks).length === 0) {
+      console.log('No tasks found in all view');
+      return (
+        <Box sx={{ p: 2 }}>
+          <Typography>No tasks found</Typography>
         </Box>
       );
     }
@@ -71,6 +81,21 @@ const TaskList = ({ onEdit, currentDate }) => {
       return parseLocalDate(b) - parseLocalDate(a);
     });
 
+    // Filter out dates with no tasks
+    const datesWithTasks = sortedDates.filter(dateKey =>
+      Array.isArray(tasks[dateKey]) && tasks[dateKey].length > 0
+    );
+
+    console.log('Dates with tasks:', datesWithTasks);
+
+    if (datesWithTasks.length === 0) {
+      return (
+        <Box sx={{ p: 2 }}>
+          <Typography>No tasks found</Typography>
+        </Box>
+      );
+    }
+
     return (
       <List
         disablePadding
@@ -90,91 +115,77 @@ const TaskList = ({ onEdit, currentDate }) => {
           }
         }}
       >
-        {sortedDates.map((dateKey) => (
-          tasks[dateKey]?.length > 0 && (
-            <Box key={dateKey}>
-              <Typography
-                variant="subtitle2"
-                sx={{
-                  px: 2,
-                  py: 1,
-                  fontFamily: '"Roboto Mono", monospace',
-                  fontWeight: 500,
-                  fontSize: '0.75rem',
-                  color: 'text.secondary',
-                  position: 'sticky',
-                  top: 0,
-                  bgcolor: 'background.paper',
-                  zIndex: 1
-                }}
-              >
-                {dateKey === 'Unscheduled'
-                  ? 'Unscheduled'
-                  : (() => {
-                      // Create a date object that preserves the date parts exactly as-is
-                      const [year, month, day] = dateKey.split('-').map(Number);
+        {datesWithTasks.map((dateKey) => (
+          <Box key={dateKey}>
+            <Typography
+              variant="subtitle2"
+              sx={{
+                px: 2,
+                py: 1,
+                fontFamily: '"Roboto Mono", monospace',
+                fontWeight: 500,
+                fontSize: '0.75rem',
+                color: 'text.secondary',
+                position: 'sticky',
+                top: 0,
+                bgcolor: 'background.paper',
+                zIndex: 1
+              }}
+            >
+              {dateKey === 'Unscheduled'
+                ? 'Unscheduled'
+                : format(new Date(dateKey), 'EEEE, MMMM d, yyyy')}
+            </Typography>
+            {tasks[dateKey].map((task) => (
+              <TaskCard
+                key={task._id}
+                task={task}
+                onEdit={onEdit}
+              />
+            ))}
+          </Box>
+        ))}
+      </List>
+    );
+  } else {
+    // For other views, tasks should be an array
+    if (!Array.isArray(tasks) || tasks.length === 0) {
+      return (
+        <Box sx={{ p: 2 }}>
+          <Typography>No tasks found</Typography>
+        </Box>
+      );
+    }
 
-                      // Create a date using local date constructor
-                      // This ensures we get the exact date without timezone issues
-                      const date = new Date(year, month - 1, day);
-
-                      if (!isValid(date)) return dateKey;
-                      return format(date, 'EEEE, MMMM d, yyyy');
-                    })()
-                }
-              </Typography>
-              {tasks[dateKey].map((task) => (
-                <TaskCard
-                  key={task._id}
-                  task={task}
-                  onEdit={onEdit}
-                />
-              ))}
-            </Box>
-          )
+    return (
+      <List
+        disablePadding
+        sx={{
+          flex: 1,
+          overflowY: 'auto',
+          '&::-webkit-scrollbar': {
+            width: '8px',
+            bgcolor: 'transparent'
+          },
+          '&::-webkit-scrollbar-thumb': {
+            borderRadius: '4px',
+            bgcolor: 'rgba(0, 0, 0, 0.1)'
+          },
+          '&::-webkit-scrollbar-track': {
+            bgcolor: 'transparent'
+          }
+        }}
+      >
+        {tasks.map((task) => (
+          <TaskCard
+            key={task._id}
+            task={task}
+            onEdit={onEdit}
+          />
         ))}
       </List>
     );
   }
-
-  // Daily view (and other views)
-  // Check if tasks is actually an array before mapping
-  if (!Array.isArray(tasks)) {
-    return (
-      <Box sx={{ p: 2 }}>
-        <Typography>Loading tasks...</Typography>
-      </Box>
-    );
-  }
-
-  return (
-    <List
-      disablePadding
-      sx={{
-        flex: 1,
-        overflowY: 'auto',
-        '&::-webkit-scrollbar': {
-          width: '8px',
-          bgcolor: 'transparent'
-        },
-        '&::-webkit-scrollbar-thumb': {
-          borderRadius: '4px',
-          bgcolor: 'rgba(0, 0, 0, 0.1)'
-        },
-        '&::-webkit-scrollbar-track': {
-          bgcolor: 'transparent'
-        }
-      }}
-    >
-      {tasks.map((task) => (
-        <TaskCard
-          key={task._id}
-          task={task}
-          onEdit={onEdit}
-        />
-      ))}
-    </List>
-  );
 };
 
 export default TaskList;

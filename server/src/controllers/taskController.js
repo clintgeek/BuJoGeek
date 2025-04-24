@@ -1,5 +1,7 @@
 import Task from '../models/Task.js';
 import { handleError } from '../utils/errorHandler.js';
+import { getTasksForDates } from '../utils/taskUtils.js';
+import { format } from 'date-fns';
 
 // Create a new task
 export const createTask = async (req, res) => {
@@ -366,91 +368,52 @@ export const getWeeklyTasks = async (req, res) => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    console.log('\n=== Weekly Tasks Query ===');
-    console.log(`Start Date: ${startDate}`);
-    console.log(`End Date: ${endDate}`);
-    console.log(`Today: ${today.toISOString()}`);
-
-    const query = {
-      createdBy: req.user._id,
+    // Find all tasks that fall within the week's date range
+    const tasks = await Task.find({
       $or: [
-        // Tasks with future due dates within the week
+        // Tasks with due dates within the week
         {
           dueDate: {
-            $gte: today,
-            $lte: new Date(endDate)
-          },
-          status: 'pending'
+            $gte: startDate,
+            $lte: endDate
+          }
         },
-        // Completed tasks that were completed within the week
+        // Completed tasks within the week
         {
           status: 'completed',
           updatedAt: {
-            $gte: new Date(startDate),
-            $lte: new Date(endDate)
+            $gte: startDate,
+            $lte: endDate
           }
         },
-        // Floating tasks: incomplete tasks with no due date OR past due date
-        // These only show up if today falls within the requested week
+        // Unscheduled tasks (they should show on today if today is in the week)
         {
+          dueDate: null,
           status: 'pending',
-          isBacklog: false,
-          $or: [
-            { dueDate: null },
-            { dueDate: { $lt: today } }
-          ],
-          $and: [
-            {
-              $expr: {
-                $and: [
-                  { $gte: [today, new Date(startDate)] },
-                  { $lte: [today, new Date(endDate)] }
-                ]
-              }
-            }
-          ]
+          isBacklog: false
+        },
+        // Past due tasks (they should show on today if today is in the week)
+        {
+          dueDate: { $lt: today },
+          status: 'pending'
         }
       ]
-    };
+    }).sort({ dueDate: 1 });
 
-    console.log('\nQuery Conditions:');
-    console.log(JSON.stringify(query, null, 2));
-
-    const tasks = await Task.find(query)
-      .populate('parentTask', 'content status')
-      .sort({ dueDate: 1, createdAt: -1 });
-
-    // Modify the tasks to set their display date to today if they are floating
-    const modifiedTasks = tasks.map(task => {
-      const taskDueDate = task.dueDate ? new Date(task.dueDate) : null;
-      if (task.status === 'pending' && (taskDueDate === null || taskDueDate < today)) {
-        // Create a new task object with the display date set to today
-        return {
-          ...task.toObject(),
-          displayDate: today
-        };
-      }
-      return task;
+    // Group tasks by date using the utility function
+    const groupedTasks = getTasksForDates(tasks, {
+      startDate: new Date(startDate),
+      endDate: new Date(endDate),
+      today,
+      includeCompleted: true,
+      includeUnscheduled: true,
+      includePastDue: true
     });
 
-    console.log('\nFound Tasks:');
-    modifiedTasks.forEach(task => {
-      const taskDueDate = task.dueDate ? new Date(task.dueDate) : null;
-      const taskUpdatedAt = new Date(task.updatedAt);
-      console.log(`\nTask: ${task.content}`);
-      console.log(`- Due Date: ${taskDueDate ? taskDueDate.toISOString() : 'None'}`);
-      console.log(`- Display Date: ${task.displayDate ? task.displayDate.toISOString() : 'None'}`);
-      console.log(`- Status: ${task.status}`);
-      console.log(`- Updated At: ${taskUpdatedAt.toISOString()}`);
-      console.log(`- Is Backlog: ${task.isBacklog}`);
-      console.log(`- Is Past Due: ${taskDueDate ? taskDueDate < today : 'N/A'}`);
-      console.log(`- Is Future: ${taskDueDate ? taskDueDate > today : 'N/A'}`);
-      console.log(`- Completion Date: ${task.status === 'completed' ? taskUpdatedAt.toISOString() : 'N/A'}`);
-    });
-
-    res.json(modifiedTasks);
+    res.json(groupedTasks);
   } catch (error) {
-    handleError(res, error);
+    console.error('Error fetching weekly tasks:', error);
+    res.status(500).json({ error: 'Failed to fetch weekly tasks' });
   }
 };
 
@@ -458,30 +421,55 @@ export const getWeeklyTasks = async (req, res) => {
 export const getMonthlyTasks = async (req, res) => {
   try {
     const { startDate, endDate } = req.query;
-    const query = {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Find all tasks that fall within the month's date range
+    const tasks = await Task.find({
       createdBy: req.user._id,
       $or: [
+        // Tasks with due dates within the month
         {
           dueDate: {
             $gte: new Date(startDate),
             $lte: new Date(endDate)
           }
         },
+        // Completed tasks within the month
         {
-          createdAt: {
+          status: 'completed',
+          updatedAt: {
             $gte: new Date(startDate),
             $lte: new Date(endDate)
           }
+        },
+        // Unscheduled tasks (they should show on today if today is in the month)
+        {
+          dueDate: null,
+          status: 'pending',
+          isBacklog: false
+        },
+        // Past due tasks (they should show on today if today is in the month)
+        {
+          dueDate: { $lt: today },
+          status: 'pending'
         }
       ]
-    };
+    }).sort({ dueDate: 1, createdAt: -1 });
 
-    const tasks = await Task.find(query)
-      .populate('parentTask', 'content status')
-      .sort({ dueDate: 1, createdAt: -1 });
+    // Group tasks by date using the utility function
+    const groupedTasks = getTasksForDates(tasks, {
+      startDate: new Date(startDate),
+      endDate: new Date(endDate),
+      today,
+      includeCompleted: true,
+      includeUnscheduled: true,
+      includePastDue: true
+    });
 
-    res.json(tasks);
+    res.json(groupedTasks);
   } catch (error) {
+    console.error('Error fetching monthly tasks:', error);
     handleError(res, error);
   }
 };
@@ -489,74 +477,70 @@ export const getMonthlyTasks = async (req, res) => {
 // Get all tasks in chronological order
 export const getAllTasks = async (req, res) => {
   try {
-    const query = {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    console.log('Getting all tasks for user:', req.user._id);
+
+    // First, get all tasks without complex filtering
+    const tasks = await Task.find({
       createdBy: req.user._id,
       isBacklog: false
-    };
+    }).sort({ dueDate: -1, createdAt: -1 });
 
-    const tasks = await Task.find(query)
-      .sort({
-        dueDate: -1,
-        createdAt: -1
-      });
+    console.log('Found tasks:', tasks.length);
+
+    if (tasks.length === 0) {
+      console.log('No tasks found for user');
+      return res.json({});
+    }
 
     // Group tasks by date
-    const groupedTasks = tasks.reduce((acc, task) => {
-      let dateKey;
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-
-      if (task.dueDate) {
-        const dueDate = new Date(task.dueDate);
-        dueDate.setHours(0, 0, 0, 0);
-
-        // For pending tasks with past due dates, use today's date
-        if (task.status === 'pending' && dueDate < today) {
-          const year = today.getFullYear();
-          const month = String(today.getMonth() + 1).padStart(2, '0');
-          const day = String(today.getDate()).padStart(2, '0');
-          dateKey = `${year}-${month}-${day}`;
-        } else {
-          // For scheduled tasks, use their due date
-          const year = dueDate.getFullYear();
-          const month = String(dueDate.getMonth() + 1).padStart(2, '0');
-          const day = String(dueDate.getDate()).padStart(2, '0');
-          dateKey = `${year}-${month}-${day}`;
-        }
-      } else if (task.status === 'completed') {
-        // For completed items, use the completion date
-        const completedDate = new Date(task.updatedAt);
-        completedDate.setHours(0, 0, 0, 0);
-
-        const year = completedDate.getFullYear();
-        const month = String(completedDate.getMonth() + 1).padStart(2, '0');
-        const day = String(completedDate.getDate()).padStart(2, '0');
-        dateKey = `${year}-${month}-${day}`;
+    const groupedTasks = {};
+    tasks.forEach(task => {
+      // Determine the date to use for grouping
+      let dateToUse;
+      if (task.status === 'completed') {
+        dateToUse = task.updatedAt;
+      } else if (task.dueDate) {
+        dateToUse = task.dueDate;
       } else {
-        // For unscheduled, incomplete items, use today's date
-        const year = today.getFullYear();
-        const month = String(today.getMonth() + 1).padStart(2, '0');
-        const day = String(today.getDate()).padStart(2, '0');
-        dateKey = `${year}-${month}-${day}`;
+        dateToUse = task.createdAt;
       }
 
-      if (!acc[dateKey]) {
-        acc[dateKey] = [];
-      }
-      acc[dateKey].push(task);
-      return acc;
-    }, {});
+      // Format the date key
+      const dateKey = format(new Date(dateToUse), 'yyyy-MM-dd');
 
-    // Sort dates in reverse chronological order (newest/future dates first)
-    const sortedEntries = Object.entries(groupedTasks)
-      .sort(([dateA], [dateB]) => {
-        return new Date(dateB) - new Date(dateA);
+      // Initialize the array if it doesn't exist
+      if (!groupedTasks[dateKey]) {
+        groupedTasks[dateKey] = [];
+      }
+
+      // Add the task to its date group
+      groupedTasks[dateKey].push(task);
+    });
+
+    console.log('Grouped tasks by dates:', Object.keys(groupedTasks));
+
+    // Sort tasks within each date
+    Object.keys(groupedTasks).forEach(date => {
+      groupedTasks[date].sort((a, b) => {
+        // Sort by status first (pending before completed)
+        if (a.status !== b.status) {
+          return a.status === 'pending' ? -1 : 1;
+        }
+        // Then by priority
+        if (a.priority !== b.priority) {
+          return (a.priority || 999) - (b.priority || 999);
+        }
+        // Then by creation date
+        return new Date(b.createdAt) - new Date(a.createdAt);
       });
+    });
 
-    const sortedGroupedTasks = Object.fromEntries(sortedEntries);
-
-    res.json(sortedGroupedTasks);
+    res.json(groupedTasks);
   } catch (error) {
+    console.error('Error in getAllTasks:', error);
     handleError(res, error);
   }
 };

@@ -23,15 +23,15 @@ import {
   endOfWeek,
   eachDayOfInterval,
   isToday,
-  isSameDay,
   getWeek
 } from 'date-fns';
 import { useTaskContext } from '../../context/TaskContext.jsx';
 import TaskList from '../tasks/TaskList';
+import TaskCard from '../tasks/TaskCard';
 
 const WeeklyLog = () => {
   const [selectedWeek, setSelectedWeek] = useState(new Date());
-  const { tasks, fetchWeeklyTasks } = useTaskContext();
+  const { tasks, loading, fetchWeeklyTasks } = useTaskContext();
 
   const weekStart = startOfWeek(selectedWeek, { weekStartsOn: 1 }); // Start on Monday
   const weekEnd = endOfWeek(selectedWeek, { weekStartsOn: 1 });
@@ -60,74 +60,8 @@ const WeeklyLog = () => {
   };
 
   const getTasksForDay = (date) => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const currentDate = new Date(date);
-    currentDate.setHours(0, 0, 0, 0);
-
-    console.log(`\n=== Processing tasks for date: ${format(currentDate, 'yyyy-MM-dd')} ===`);
-    console.log(`Current date being checked: ${format(currentDate, 'yyyy-MM-dd')}`);
-    console.log(`Today's date: ${format(today, 'yyyy-MM-dd')}`);
-
-    return tasks.filter(task => {
-      const taskDueDate = task.dueDate ? new Date(task.dueDate) : null;
-      if (taskDueDate) taskDueDate.setHours(0, 0, 0, 0);
-
-      const taskUpdatedAt = new Date(task.updatedAt);
-      taskUpdatedAt.setHours(0, 0, 0, 0);
-
-      const taskDisplayDate = task.displayDate ? new Date(task.displayDate) : null;
-      if (taskDisplayDate) taskDisplayDate.setHours(0, 0, 0, 0);
-
-      const isTaskDueDate = taskDueDate && isSameDay(taskDueDate, currentDate);
-      const isTaskCompletedDate = task.status === 'completed' && isSameDay(taskUpdatedAt, currentDate);
-      const isToday = isSameDay(currentDate, today);
-      const isPastDue = taskDueDate && taskDueDate < today && task.status === 'pending';
-      const isDisplayDate = taskDisplayDate && isSameDay(taskDisplayDate, currentDate);
-
-      console.log(`\nTask: ${task.content}`);
-      console.log(`- Due Date: ${taskDueDate ? format(taskDueDate, 'yyyy-MM-dd') : 'None'}`);
-      console.log(`- Display Date: ${taskDisplayDate ? format(taskDisplayDate, 'yyyy-MM-dd') : 'None'}`);
-      console.log(`- Status: ${task.status}`);
-      console.log(`- Updated At: ${format(taskUpdatedAt, 'yyyy-MM-dd')}`);
-      console.log(`- Is Today: ${isToday}`);
-      console.log(`- Is Past Due: ${isPastDue}`);
-      console.log(`- Is Task Due Date: ${isTaskDueDate}`);
-      console.log(`- Is Task Completed Date: ${isTaskCompletedDate}`);
-      console.log(`- Is Display Date: ${isDisplayDate}`);
-      console.log(`- Task Due Date < Today: ${taskDueDate ? taskDueDate < today : 'N/A'}`);
-      console.log(`- Task Due Date > Today: ${taskDueDate ? taskDueDate > today : 'N/A'}`);
-
-      let shouldShow = false;
-      let reason = '';
-
-      // For completed tasks, ONLY show on their completion date
-      if (task.status === 'completed') {
-        shouldShow = isTaskCompletedDate;
-        reason = shouldShow ? 'Completed task showing on completion date' : 'Completed task not showing (wrong date)';
-      }
-      // For pending tasks with due dates
-      else if (taskDueDate) {
-        // If due date is in the future, only show on that date
-        if (taskDueDate > today) {
-          shouldShow = isTaskDueDate;
-          reason = shouldShow ? 'Future task showing on due date' : 'Future task not showing (wrong date)';
-        }
-        // If due date is in the past, show on display date (today)
-        else {
-          shouldShow = isDisplayDate;
-          reason = shouldShow ? 'Past due task showing on display date' : 'Past due task not showing (wrong date)';
-        }
-      }
-      // For unscheduled tasks, show on display date (today)
-      else if (!task.dueDate && task.status === 'pending' && !task.isBacklog) {
-        shouldShow = isDisplayDate;
-        reason = shouldShow ? 'Unscheduled task showing on display date' : 'Unscheduled task not showing (wrong date)';
-      }
-
-      console.log(`- Should Show: ${shouldShow} (${reason})`);
-      return shouldShow;
-    });
+    const dateKey = format(date, 'yyyy-MM-dd');
+    return tasks[dateKey] || [];
   };
 
   return (
@@ -282,11 +216,15 @@ const WeeklyLog = () => {
 
                 {/* Tasks */}
                 {dayTasks.length > 0 ? (
-                  <TaskList
-                    tasks={dayTasks}
-                    showMigrationActions={true}
-                    compact={false}
-                  />
+                  <Box sx={{ mt: 1 }}>
+                    {dayTasks.map((task) => (
+                      <TaskCard
+                        key={task._id}
+                        task={task}
+                        showMigrationActions={true}
+                      />
+                    ))}
+                  </Box>
                 ) : (
                   <Typography
                     variant="body2"
