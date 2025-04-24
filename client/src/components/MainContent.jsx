@@ -16,14 +16,16 @@ const MainContent = () => {
   // Add keyboard shortcut handler
   useEffect(() => {
     const handleKeyPress = (event) => {
-      if ((event.metaKey || event.ctrlKey) && event.key === 'k') {
+      // Check for Cmd+K (Mac) or Ctrl+K (Windows/Linux)
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
         event.preventDefault();
+        event.stopPropagation();
         setQuickEntryOpen(true);
       }
     };
 
-    document.addEventListener('keydown', handleKeyPress);
-    return () => document.removeEventListener('keydown', handleKeyPress);
+    window.addEventListener('keydown', handleKeyPress, true);
+    return () => window.removeEventListener('keydown', handleKeyPress, true);
   }, []);
 
   return (

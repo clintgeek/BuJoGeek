@@ -27,14 +27,19 @@ app.use(cors());
 app.use(express.json());
 app.use(morgan('dev'));
 
-// Serve static files from the client build directory
-app.use(express.static(path.join(__dirname, '../client/dist')));
-
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/templates', templateRoutes);
 app.use('/api/journal', journalRoutes);
 app.use('/api/tasks', taskRoutes);
+
+// Serve static files from the client build directory
+app.use(express.static(path.join(__dirname, '../client/dist')));
+
+// Catch-all route to handle client-side routing
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../client/dist/index.html'));
+});
 
 // MongoDB Connection
 const connectDB = async () => {

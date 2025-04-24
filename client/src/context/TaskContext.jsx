@@ -50,6 +50,31 @@ const TaskProvider = ({ children }) => {
     tags: []
   });
 
+  // Add this utility function near the top of the file, after imports
+  const sortTasks = (tasks) => {
+    if (!Array.isArray(tasks)) return tasks;
+
+    return [...tasks].sort((a, b) => {
+      // First sort by priority (high to none)
+      const priorityA = a.priority || 999;
+      const priorityB = b.priority || 999;
+      if (priorityA !== priorityB) {
+        return priorityA - priorityB;
+      }
+
+      // Then sort by due date (past to future then none)
+      const dateA = a.dueDate ? new Date(a.dueDate) : null;
+      const dateB = b.dueDate ? new Date(b.dueDate) : null;
+
+      // Handle cases where one or both dates are null
+      if (!dateA && !dateB) return 0;
+      if (!dateA) return 1;
+      if (!dateB) return -1;
+
+      return dateA - dateB;
+    });
+  };
+
   // Helper function to handle API errors
   const handleApiError = useCallback((error) => {
     let errorType = TaskError.UNKNOWN;
@@ -109,7 +134,6 @@ const TaskProvider = ({ children }) => {
   // Task fetching with debouncing and cache
   const fetchTasksForDateRange = useCallback(async (startDate, endDate, type) => {
     try {
-      // For daily view, we want to be less aggressive with caching
       if (type !== 'daily' && loading !== LoadingState.IDLE) {
         console.log('Already loading, skipping fetch');
         return;
@@ -117,13 +141,11 @@ const TaskProvider = ({ children }) => {
 
       const fetchKey = `${type}-${startDate.toISOString()}-${endDate.toISOString()}`;
 
-      // Only check cache for non-daily views
       if (type !== 'daily' && lastFetchRef.current === fetchKey) {
         console.log('Already fetched this range, skipping');
         return;
       }
 
-      // Clear any existing timeout
       if (fetchTimeoutRef.current) {
         clearTimeout(fetchTimeoutRef.current);
       }
@@ -142,16 +164,22 @@ const TaskProvider = ({ children }) => {
 
         console.log(`${type} tasks response:`, response.data);
 
-        // For daily view, always update the state
-        if (type === 'daily' || JSON.stringify(response.data) !== JSON.stringify(tasks)) {
-          setTasks(response.data);
+        // Sort tasks before updating state
+        if (Array.isArray(response.data)) {
+          setTasks(sortTasks(response.data));
+        } else {
+          const sortedTasks = {};
+          Object.entries(response.data).forEach(([date, tasks]) => {
+            sortedTasks[date] = sortTasks(tasks);
+          });
+          setTasks(sortedTasks);
         }
 
         lastFetchRef.current = fetchKey;
       } catch (error) {
         console.error(`Error fetching ${type} tasks:`, error);
         handleApiError(error);
-        setTasks(Array.isArray(tasks) ? [] : {}); // Reset tasks while preserving type
+        setTasks(Array.isArray(tasks) ? [] : {});
       } finally {
         setLoading(LoadingState.IDLE);
       }
@@ -189,7 +217,6 @@ const TaskProvider = ({ children }) => {
 
   const fetchAllTasks = useCallback(async () => {
     try {
-      // Check if we're already loading
       if (loading !== LoadingState.IDLE) {
         console.log('Already loading all tasks, skipping fetch');
         return;
@@ -205,14 +232,20 @@ const TaskProvider = ({ children }) => {
 
       console.log('All tasks response:', response.data);
 
-      // Always update the tasks state with the response
-      setTasks(response.data || {});
-      console.log('Updated tasks state');
+      if (Array.isArray(response.data)) {
+        setTasks(sortTasks(response.data));
+      } else {
+        const sortedTasks = {};
+        Object.entries(response.data).forEach(([date, tasks]) => {
+          sortedTasks[date] = sortTasks(tasks);
+        });
+        setTasks(sortedTasks);
+      }
 
     } catch (error) {
       console.error('Error fetching all tasks:', error);
       handleApiError(error);
-      setTasks({}); // Reset tasks on error
+      setTasks({});
     } finally {
       setLoading(LoadingState.IDLE);
     }
@@ -229,6 +262,13 @@ const TaskProvider = ({ children }) => {
 
       setTasks(prev => {
         const newTask = response.data;
+
+        // If prev is an array (daily view), append and sort
+        if (Array.isArray(prev)) {
+          return sortTasks([...prev, newTask]);
+        }
+
+        // If prev is an object (grouped by dates), add to appropriate date and sort
         const taskDate = new Date(newTask.dueDate || newTask.updatedAt || newTask.createdAt);
         const dateKey = format(taskDate, 'yyyy-MM-dd');
 
@@ -236,7 +276,7 @@ const TaskProvider = ({ children }) => {
         if (!newTasks[dateKey]) {
           newTasks[dateKey] = [];
         }
-        newTasks[dateKey].push(newTask);
+        newTasks[dateKey] = sortTasks([...(newTasks[dateKey] || []), newTask]);
         return newTasks;
       });
 
@@ -293,9 +333,16 @@ const TaskProvider = ({ children }) => {
       });
 
       setTasks(prev => {
+        // If prev is an array (daily view)
+        if (Array.isArray(prev)) {
+          return prev.filter(task => task._id !== taskId);
+        }
+
+        // If prev is an object (grouped by dates)
         const newTasks = {};
-        Object.entries(prev).forEach(([date, tasks]) => {
-          const filteredTasks = tasks ? tasks.filter(task => task._id !== taskId) : [];
+        Object.entries(prev).forEach(([date, dateTasks]) => {
+          if (!Array.isArray(dateTasks)) return;
+          const filteredTasks = dateTasks.filter(task => task._id !== taskId);
           if (filteredTasks.length > 0) {
             newTasks[date] = filteredTasks;
           }
