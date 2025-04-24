@@ -55,7 +55,12 @@ const TaskProvider = ({ children }) => {
     if (!Array.isArray(tasks)) return tasks;
 
     return [...tasks].sort((a, b) => {
-      // First sort by priority (high to none)
+      // First sort by completion status (pending before completed)
+      if (a.status !== b.status) {
+        return a.status === 'completed' ? 1 : -1;
+      }
+
+      // Then sort by priority (high to none)
       const priorityA = a.priority || 999;
       const priorityB = b.priority || 999;
       if (priorityA !== priorityB) {
@@ -299,18 +304,55 @@ const TaskProvider = ({ children }) => {
       setTasks(prev => {
         // If prev is an array (daily, weekly views)
         if (Array.isArray(prev)) {
-          return prev.map(task =>
+          return sortTasks(prev.map(task =>
             task._id === taskId ? response.data : task
-          );
+          ));
         }
 
         // If prev is an object (all, monthly views)
         const newTasks = { ...prev };
         Object.entries(newTasks).forEach(([date, tasks]) => {
           if (Array.isArray(tasks)) {
-            newTasks[date] = tasks.map(task =>
+            newTasks[date] = sortTasks(tasks.map(task =>
               task._id === taskId ? response.data : task
-            );
+            ));
+          }
+        });
+        return newTasks;
+      });
+
+      return response.data;
+    } catch (error) {
+      handleApiError(error);
+    } finally {
+      setLoading(LoadingState.IDLE);
+    }
+  }, [getAuthHeaders, handleApiError]);
+
+  // Add updateTaskStatus function
+  const updateTaskStatus = useCallback(async (taskId, newStatus) => {
+    try {
+      setLoading(LoadingState.UPDATING);
+      setError(null);
+      const response = await axios.put(`${API_URL}/tasks/${taskId}`, { status: newStatus }, {
+        headers: getAuthHeaders()
+      });
+
+      setTasks(prev => {
+        // If prev is an array (daily, weekly views)
+        if (Array.isArray(prev)) {
+          return sortTasks(prev.map(task =>
+            task._id === taskId ? response.data : task
+          ));
+        }
+
+        // If prev is an object (all, monthly views)
+        const newTasks = { ...prev };
+        Object.entries(newTasks).forEach(([date, tasks]) => {
+          if (Array.isArray(tasks)) {
+            newTasks[date] = sortTasks(tasks.map(task =>
+              task._id === taskId ? response.data : task
+            ));
           }
         });
         return newTasks;
@@ -426,6 +468,7 @@ const TaskProvider = ({ children }) => {
     fetchAllTasks,
     createTask,
     updateTask,
+    updateTaskStatus,
     deleteTask,
     migrateTask,
 
