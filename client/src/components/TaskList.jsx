@@ -30,12 +30,15 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import useTaskStore from '../store/taskStore';
 import { format } from 'date-fns';
+import TaskEditor from './tasks/TaskEditor';
 
 const TaskList = ({ tasks = [] }) => {
-  const { updateTaskStatus, deleteTask, migrateToBacklog, migrateToFuture } = useTaskStore();
+  const { updateTaskStatus, deleteTask, migrateToBacklog, migrateToFuture, updateTask } = useTaskStore();
   const [selectedTask, setSelectedTask] = useState(null);
   const [futureDate, setFutureDate] = useState(null);
   const [migrationDialogOpen, setMigrationDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editedTask, setEditedTask] = useState(null);
 
   // Ensure tasks is an array
   const taskArray = Array.isArray(tasks) ? tasks : [];
@@ -129,9 +132,15 @@ const TaskList = ({ tasks = [] }) => {
     }
   };
 
+  const handleTaskClick = (task) => {
+    setEditedTask(task);
+    setEditDialogOpen(true);
+  };
+
   const renderTask = (task) => (
     <ListItem
       key={task._id}
+      onClick={() => handleTaskClick(task)}
       sx={{
         borderLeft: '4px solid',
         borderColor: task.priority === 1 ? 'error.main' :
@@ -139,7 +148,11 @@ const TaskList = ({ tasks = [] }) => {
                     task.priority === 3 ? 'info.main' : 'grey.300',
         mb: 1,
         bgcolor: 'background.paper',
-        borderRadius: 1
+        borderRadius: 1,
+        cursor: 'pointer',
+        '&:hover': {
+          bgcolor: 'action.hover'
+        }
       }}
     >
       <ListItemText
@@ -157,7 +170,10 @@ const TaskList = ({ tasks = [] }) => {
       <ListItemSecondaryAction>
         <IconButton
           edge="end"
-          onClick={() => handleMigrateToBacklog(task._id)}
+          onClick={(e) => {
+            e.stopPropagation();
+            handleMigrateToBacklog(task._id);
+          }}
           sx={{ mr: 1 }}
           title="Migrate to Backlog"
         >
@@ -165,7 +181,10 @@ const TaskList = ({ tasks = [] }) => {
         </IconButton>
         <IconButton
           edge="end"
-          onClick={() => handleMigrateToFuture(task._id)}
+          onClick={(e) => {
+            e.stopPropagation();
+            handleMigrateToFuture(task._id);
+          }}
           sx={{ mr: 1 }}
           title="Migrate to Future"
         >
@@ -173,7 +192,10 @@ const TaskList = ({ tasks = [] }) => {
         </IconButton>
         <IconButton
           edge="end"
-          onClick={() => handleStatusChange(task._id, task.status === 'completed' ? 'pending' : 'completed')}
+          onClick={(e) => {
+            e.stopPropagation();
+            handleStatusChange(task._id, task.status === 'completed' ? 'pending' : 'completed');
+          }}
           sx={{ mr: 1 }}
           title={task.status === 'completed' ? 'Mark as Pending' : 'Mark as Completed'}
         >
@@ -181,7 +203,10 @@ const TaskList = ({ tasks = [] }) => {
         </IconButton>
         <IconButton
           edge="end"
-          onClick={() => handleDelete(task._id)}
+          onClick={(e) => {
+            e.stopPropagation();
+            handleDelete(task._id);
+          }}
           title="Delete Task"
         >
           <DeleteIcon />
@@ -241,6 +266,16 @@ const TaskList = ({ tasks = [] }) => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Edit Task Dialog */}
+      <TaskEditor
+        open={editDialogOpen}
+        onClose={() => {
+          setEditDialogOpen(false);
+          setEditedTask(null);
+        }}
+        task={editedTask}
+      />
     </Box>
   );
 };

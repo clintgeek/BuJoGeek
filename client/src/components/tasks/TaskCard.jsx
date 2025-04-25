@@ -123,49 +123,17 @@ const TaskCard = ({ task, onEdit }) => {
           </Box>
         }
       >
-        <ListItemIcon onClick={handleStatusToggle} sx={{ cursor: 'pointer' }}>
-          <Tooltip title={task.status === 'completed' ? 'Mark as pending' : 'Mark as completed'}>
+        <ListItemIcon>
+          <IconButton onClick={handleStatusToggle}>
             {task.status === 'completed' ? (
               <CheckCircleIcon color="success" />
             ) : (
               <UncheckedIcon />
             )}
-          </Tooltip>
+          </IconButton>
         </ListItemIcon>
-
         <ListItemText
-          primary={
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Tooltip title={task.taskType}>
-                <Typography
-                  component="span"
-                  sx={{
-                    fontFamily: 'monospace',
-                    fontSize: '1.2rem',
-                    width: 24,
-                    textAlign: 'center'
-                  }}
-                >
-                  {signifierIcons[task.signifier]}
-                </Typography>
-              </Tooltip>
-              <Typography
-                component="span"
-                sx={{
-                  textDecoration: task.status === 'completed' ? 'line-through' : 'none',
-                  color: task.status === 'completed' ? 'text.secondary' : 'text.primary',
-                  fontWeight: task.status === 'completed' ? 'normal' : 'bold'
-                }}
-              >
-                {cleanContent(task.content)}
-              </Typography>
-              {task.priority && (
-                <Tooltip title={`Priority ${task.priority}`}>
-                  <FlagIcon color={priorityColors[task.priority]} fontSize="small" />
-                </Tooltip>
-              )}
-            </Box>
-          }
+          primary={cleanContent(task.content)}
           secondary={
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5, flexWrap: 'wrap' }}>
               <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>

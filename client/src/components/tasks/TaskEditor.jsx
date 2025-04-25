@@ -23,13 +23,8 @@ import { useTaskContext } from '../../context/TaskContext.jsx';
 const signifierOptions = [
   { value: '*', label: 'Task (*)' },
   { value: '@', label: 'Event (@)' },
-  { value: 'x', label: 'Completed (x)' },
-  { value: '<', label: 'Migrated (<)' },
-  { value: '>', label: 'Scheduled (>)' },
   { value: '-', label: 'Note (-)' },
-  { value: '!', label: 'Priority (!)' },
-  { value: '?', label: 'Question (?)' },
-  { value: '#', label: 'Tagged (#)' }
+  { value: '?', label: 'Question (?)' }
 ];
 
 const priorityOptions = [
@@ -47,6 +42,7 @@ const TaskEditor = ({ open, onClose, task = null }) => {
     status: 'pending',
     priority: null,
     dueDate: null,
+    createdAt: new Date(),
     tags: []
   });
   const [tagInput, setTagInput] = useState('');
@@ -60,6 +56,7 @@ const TaskEditor = ({ open, onClose, task = null }) => {
         status: task.status,
         priority: task.priority,
         dueDate: task.dueDate ? new Date(task.dueDate) : null,
+        createdAt: task.createdAt ? new Date(task.createdAt) : new Date(),
         tags: task.tags || []
       });
     }
@@ -168,6 +165,13 @@ const TaskEditor = ({ open, onClose, task = null }) => {
                 ))}
               </Select>
             </FormControl>
+
+            <DateTimePicker
+              label="Created Date & Time"
+              value={formData.createdAt}
+              onChange={(newDate) => setFormData({ ...formData, createdAt: newDate })}
+              slotProps={{ textField: { fullWidth: true } }}
+            />
 
             <DateTimePicker
               label="Due Date & Time"
