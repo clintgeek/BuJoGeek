@@ -20,7 +20,8 @@ export const LoadingState = {
   CREATING: 'creating',
   UPDATING: 'updating',
   DELETING: 'deleting',
-  MIGRATING: 'migrating'
+  MIGRATING: 'migrating',
+  ERROR: 'error'
 };
 
 const TaskContext = createContext();
@@ -35,7 +36,7 @@ export const useTaskContext = () => {
 
 const TaskProvider = ({ children }) => {
   // Main state
-  const [tasks, setTasks] = useState({});
+  const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(LoadingState.IDLE);
   const [error, setError] = useState(null);
   const fetchTimeoutRef = useRef(null);
@@ -137,62 +138,49 @@ const TaskProvider = ({ children }) => {
   }, []);
 
   // Task fetching with debouncing and cache
-  const fetchTasksForDateRange = useCallback(async (startDate, endDate, type) => {
-    try {
-      if (type !== 'daily' && loading !== LoadingState.IDLE) {
-        console.log('Already loading, skipping fetch');
-        return;
-      }
+  const fetchTasksForDateRange = useCallback(async (startDate, endDate, fetchKey) => {
+    // Generate fetch key if not provided
+    const key = fetchKey || `${startDate.toISOString()}-${endDate.toISOString()}`;
 
-      const fetchKey = `${type}-${startDate.toISOString()}-${endDate.toISOString()}`;
-
-      if (type !== 'daily' && lastFetchRef.current === fetchKey) {
-        console.log('Already fetched this range, skipping');
-        return;
-      }
-
-      if (fetchTimeoutRef.current) {
-        clearTimeout(fetchTimeoutRef.current);
-      }
-
-      setLoading(LoadingState.FETCHING);
-      console.log(`Fetching ${type} tasks for:`, startDate, endDate);
-
-      try {
-        const response = await axios.get(`${API_URL}/tasks/${type}`, {
-          params: {
-            startDate: startDate.toISOString(),
-            endDate: endDate.toISOString()
-          },
-          headers: getAuthHeaders()
-        });
-
-        console.log(`${type} tasks response:`, response.data);
-
-        // Sort tasks before updating state
-        if (Array.isArray(response.data)) {
-          setTasks(sortTasks(response.data));
-        } else {
-          const sortedTasks = {};
-          Object.entries(response.data).forEach(([date, tasks]) => {
-            sortedTasks[date] = sortTasks(tasks);
-          });
-          setTasks(sortedTasks);
-        }
-
-        lastFetchRef.current = fetchKey;
-      } catch (error) {
-        console.error(`Error fetching ${type} tasks:`, error);
-        handleApiError(error);
-        setTasks(Array.isArray(tasks) ? [] : {});
-      } finally {
-        setLoading(LoadingState.IDLE);
-      }
-    } catch (error) {
-      handleApiError(error);
-      setLoading(LoadingState.IDLE);
+    // Skip if already fetching this range
+    if (loading === LoadingState.FETCHING && lastFetchRef.current === key) {
+      console.log('Already fetching this range, skipping');
+      return;
     }
-  }, [getAuthHeaders, handleApiError, loading, tasks]);
+
+    try {
+      setLoading(LoadingState.FETCHING);
+      setError(null);
+      lastFetchRef.current = key;
+
+      // Format dates as YYYY-MM-DD
+      const formattedStartDate = format(startDate, 'yyyy-MM-dd');
+      const formattedEndDate = format(endDate, 'yyyy-MM-dd');
+
+      const response = await axios.get(`${API_URL}/tasks/range`, {
+        params: {
+          startDate: formattedStartDate,
+          endDate: formattedEndDate
+        },
+        headers: getAuthHeaders()
+      });
+
+      // Only update if data is different
+      const newTasks = response.data;
+      setTasks(prevTasks => {
+        if (JSON.stringify(prevTasks) !== JSON.stringify(newTasks)) {
+          return newTasks;
+        }
+        return prevTasks;
+      });
+
+      setLoading(LoadingState.IDLE);
+      setError(null);
+    } catch (error) {
+      console.error('Error fetching tasks:', error);
+      handleApiError(error);
+    }
+  }, [loading, getAuthHeaders, handleApiError]);
 
   // Cleanup timeout on unmount
   useEffect(() => {
@@ -221,113 +209,232 @@ const TaskProvider = ({ children }) => {
   }, [filters, getAuthHeaders, handleApiError]);
 
   const fetchAllTasks = useCallback(async () => {
-    try {
-      if (loading !== LoadingState.IDLE) {
-        console.log('Already loading all tasks, skipping fetch');
-        return;
-      }
+    // Skip if already fetching
+    if (loading === LoadingState.FETCHING) {
+      console.log('Already fetching all tasks, skipping');
+      return;
+    }
 
+    // Generate a unique request ID
+    const requestId = Date.now();
+    lastFetchRef.current = requestId;
+
+    try {
       setLoading(LoadingState.FETCHING);
       setError(null);
-      console.log('Fetching all tasks...');
 
       const response = await axios.get(`${API_URL}/tasks/all`, {
         headers: getAuthHeaders()
       });
 
-      console.log('All tasks response:', response.data);
-
-      if (Array.isArray(response.data)) {
-        setTasks(sortTasks(response.data));
-      } else {
-        const sortedTasks = {};
-        Object.entries(response.data).forEach(([date, tasks]) => {
-          sortedTasks[date] = sortTasks(tasks);
-        });
-        setTasks(sortedTasks);
+      // Check if this is still the most recent request
+      if (lastFetchRef.current !== requestId) {
+        console.log('Newer request in progress, discarding results');
+        return;
       }
 
-    } catch (error) {
-      console.error('Error fetching all tasks:', error);
-      handleApiError(error);
-      setTasks({});
-    } finally {
+      const newTasks = response.data;
+
+      // Only update state if the data has actually changed
+      setTasks(prevTasks => {
+        const prevString = JSON.stringify(prevTasks);
+        const newString = JSON.stringify(newTasks);
+        if (prevString !== newString) {
+          return newTasks;
+        }
+        return prevTasks;
+      });
+
       setLoading(LoadingState.IDLE);
+      setError(null);
+    } catch (error) {
+      // Only set error if this is still the most recent request
+      if (lastFetchRef.current === requestId) {
+        console.error('Error fetching all tasks:', error);
+        handleApiError(error);
+      }
     }
-  }, [getAuthHeaders, handleApiError, loading]);
+  }, [getAuthHeaders, handleApiError]);
+
+  // Remove the effect that watches filters for 'all' view
+  // Instead, add a debounced filter effect
+  const debouncedFetchRef = useRef(null);
+
+  useEffect(() => {
+    // Only run this effect if we're in the 'all' view
+    const path = window.location.pathname;
+    const view = path.split('/')[2] || 'daily';
+
+    if (view === 'all' && loading === LoadingState.IDLE) {
+      // Clear any existing timeout
+      if (debouncedFetchRef.current) {
+        clearTimeout(debouncedFetchRef.current);
+      }
+
+      // Set a new timeout
+      debouncedFetchRef.current = setTimeout(() => {
+        fetchAllTasks();
+      }, 300); // Debounce for 300ms
+    }
+
+    // Cleanup
+    return () => {
+      if (debouncedFetchRef.current) {
+        clearTimeout(debouncedFetchRef.current);
+      }
+    };
+  }, [filters, fetchAllTasks]); // Remove loading from dependencies
+
+  // Cleanup timeouts on unmount
+  useEffect(() => {
+    return () => {
+      if (fetchTimeoutRef.current) {
+        clearTimeout(fetchTimeoutRef.current);
+      }
+      if (debouncedFetchRef.current) {
+        clearTimeout(debouncedFetchRef.current);
+      }
+    };
+  }, []);
 
   // Task operations
   const createTask = useCallback(async (taskData) => {
     try {
       setLoading(LoadingState.CREATING);
-      setError(null);
       const response = await axios.post(`${API_URL}/tasks`, taskData, {
         headers: getAuthHeaders()
       });
+      const newTask = response.data;
 
-      setTasks(prev => {
-        const newTask = response.data;
+      setTasks(prevTasks => {
+        // Handle array format (daily view)
+        if (Array.isArray(prevTasks)) {
+          return [...prevTasks, newTask].sort((a, b) => {
+            // Sort by priority first
+            const priorityOrder = { high: 0, medium: 1, low: 2, none: 3 };
+            const priorityDiff = priorityOrder[a.priority] - priorityOrder[b.priority];
+            if (priorityDiff !== 0) return priorityDiff;
 
-        // If prev is an array (daily view), append and sort
-        if (Array.isArray(prev)) {
-          return sortTasks([...prev, newTask]);
+            // Then sort by due date
+            const aDate = a.dueDate ? new Date(a.dueDate) : new Date(9999, 11, 31);
+            const bDate = b.dueDate ? new Date(b.dueDate) : new Date(9999, 11, 31);
+            return aDate - bDate;
+          });
         }
 
-        // If prev is an object (grouped by dates), add to appropriate date and sort
-        const taskDate = new Date(newTask.dueDate || newTask.updatedAt || newTask.createdAt);
-        const dateKey = format(taskDate, 'yyyy-MM-dd');
+        // Handle object format (all/other views)
+        const dateKey = newTask.dueDate ?
+          new Date(newTask.dueDate).toISOString().split('T')[0] :
+          'no-date';
 
-        const newTasks = { ...prev };
-        if (!newTasks[dateKey]) {
-          newTasks[dateKey] = [];
-        }
-        newTasks[dateKey] = sortTasks([...(newTasks[dateKey] || []), newTask]);
-        return newTasks;
+        return {
+          ...prevTasks,
+          [dateKey]: [
+            ...(prevTasks[dateKey] || []),
+            newTask
+          ].sort((a, b) => {
+            const priorityOrder = { high: 0, medium: 1, low: 2, none: 3 };
+            const priorityDiff = priorityOrder[a.priority] - priorityOrder[b.priority];
+            if (priorityDiff !== 0) return priorityDiff;
+
+            const aDate = a.dueDate ? new Date(a.dueDate) : new Date(9999, 11, 31);
+            const bDate = b.dueDate ? new Date(b.dueDate) : new Date(9999, 11, 31);
+            return aDate - bDate;
+          })
+        };
       });
 
-      return response.data;
-    } catch (error) {
-      handleApiError(error);
-    } finally {
       setLoading(LoadingState.IDLE);
+      return newTask;
+    } catch (err) {
+      console.error('Error creating task:', err);
+      setError(err.message);
+      setLoading(LoadingState.ERROR);
+      throw err;
     }
-  }, [getAuthHeaders, handleApiError]);
+  }, [getAuthHeaders]);
 
-  const updateTask = useCallback(async (taskId, taskData) => {
+  const updateTask = useCallback(async (taskId, updates) => {
     try {
       setLoading(LoadingState.UPDATING);
-      setError(null);
-      const response = await axios.put(`${API_URL}/tasks/${taskId}`, taskData, {
+      const response = await axios.put(`${API_URL}/tasks/${taskId}`, updates, {
         headers: getAuthHeaders()
       });
+      const updatedTask = response.data;
 
-      setTasks(prev => {
-        // If prev is an array (daily, weekly views)
-        if (Array.isArray(prev)) {
-          return sortTasks(prev.map(task =>
-            task._id === taskId ? response.data : task
-          ));
+      setTasks(prevTasks => {
+        // Handle array format (daily view)
+        if (Array.isArray(prevTasks)) {
+          return prevTasks
+            .map(task => task._id === taskId ? updatedTask : task)
+            .sort((a, b) => {
+              const priorityOrder = { high: 0, medium: 1, low: 2, none: 3 };
+              const priorityDiff = priorityOrder[a.priority] - priorityOrder[b.priority];
+              if (priorityDiff !== 0) return priorityDiff;
+
+              const aDate = a.dueDate ? new Date(a.dueDate) : new Date(9999, 11, 31);
+              const bDate = b.dueDate ? new Date(b.dueDate) : new Date(9999, 11, 31);
+              return aDate - bDate;
+            });
         }
 
-        // If prev is an object (all, monthly views)
-        const newTasks = { ...prev };
-        Object.entries(newTasks).forEach(([date, tasks]) => {
-          if (Array.isArray(tasks)) {
-            newTasks[date] = sortTasks(tasks.map(task =>
-              task._id === taskId ? response.data : task
-            ));
+        // Handle object format (all/other views)
+        const oldDateKey = Object.keys(prevTasks).find(date =>
+          prevTasks[date].some(task => task._id === taskId)
+        );
+
+        const newDateKey = updatedTask.dueDate ?
+          new Date(updatedTask.dueDate).toISOString().split('T')[0] :
+          'no-date';
+
+        const newTasks = { ...prevTasks };
+
+        // Remove from old date if it exists
+        if (oldDateKey) {
+          newTasks[oldDateKey] = newTasks[oldDateKey]
+            .filter(task => task._id !== taskId)
+            .sort((a, b) => {
+              const priorityOrder = { high: 0, medium: 1, low: 2, none: 3 };
+              const priorityDiff = priorityOrder[a.priority] - priorityOrder[b.priority];
+              if (priorityDiff !== 0) return priorityDiff;
+
+              const aDate = a.dueDate ? new Date(a.dueDate) : new Date(9999, 11, 31);
+              const bDate = b.dueDate ? new Date(b.dueDate) : new Date(9999, 11, 31);
+              return aDate - bDate;
+            });
+
+          // Clean up empty dates
+          if (newTasks[oldDateKey].length === 0) {
+            delete newTasks[oldDateKey];
           }
+        }
+
+        // Add to new date
+        newTasks[newDateKey] = [
+          ...(newTasks[newDateKey] || []),
+          updatedTask
+        ].sort((a, b) => {
+          const priorityOrder = { high: 0, medium: 1, low: 2, none: 3 };
+          const priorityDiff = priorityOrder[a.priority] - priorityOrder[b.priority];
+          if (priorityDiff !== 0) return priorityDiff;
+
+          const aDate = a.dueDate ? new Date(a.dueDate) : new Date(9999, 11, 31);
+          const bDate = b.dueDate ? new Date(b.dueDate) : new Date(9999, 11, 31);
+          return aDate - bDate;
         });
+
         return newTasks;
       });
 
-      return response.data;
-    } catch (error) {
-      handleApiError(error);
-    } finally {
       setLoading(LoadingState.IDLE);
+      return updatedTask;
+    } catch (err) {
+      console.error('Error updating task:', err);
+      setError(err.message);
+      setLoading(LoadingState.ERROR);
+      throw err;
     }
-  }, [getAuthHeaders, handleApiError]);
+  }, [getAuthHeaders]);
 
   // Add updateTaskStatus function
   const updateTaskStatus = useCallback(async (taskId, newStatus) => {
@@ -364,7 +471,7 @@ const TaskProvider = ({ children }) => {
     } finally {
       setLoading(LoadingState.IDLE);
     }
-  }, [getAuthHeaders, handleApiError]);
+  }, [getAuthHeaders, handleApiError, sortTasks]);
 
   const deleteTask = useCallback(async (taskId) => {
     try {
@@ -436,21 +543,85 @@ const TaskProvider = ({ children }) => {
   }, [getAuthHeaders, handleApiError]);
 
   // Convenience methods for different views
-  const fetchDailyTasks = useCallback((date) => {
-    return fetchTasksForDateRange(date, date, 'daily');
-  }, [fetchTasksForDateRange]);
+  const fetchDailyTasks = useCallback(async (date) => {
+    try {
+      setLoading(LoadingState.FETCHING);
+      setError(null);
 
-  const fetchWeeklyTasks = useCallback((weekStart, weekEnd) => {
-    return fetchTasksForDateRange(weekStart, weekEnd, 'weekly');
-  }, [fetchTasksForDateRange]);
+      const formattedDate = format(date, 'yyyy-MM-dd');
+      const response = await axios.get(`${API_URL}/tasks/daily`, {
+        params: { date: formattedDate },
+        headers: getAuthHeaders()
+      });
 
-  const fetchMonthlyTasks = useCallback((monthStart, monthEnd) => {
-    return fetchTasksForDateRange(monthStart, monthEnd, 'monthly');
-  }, [fetchTasksForDateRange]);
+      setTasks(response.data);
+      setLoading(LoadingState.IDLE);
+    } catch (error) {
+      console.error('Error fetching daily tasks:', error);
+      handleApiError(error);
+    }
+  }, [getAuthHeaders, handleApiError]);
 
-  const fetchYearlyTasks = useCallback((yearStart, yearEnd) => {
-    return fetchTasksForDateRange(yearStart, yearEnd, 'yearly');
-  }, [fetchTasksForDateRange]);
+  const fetchWeeklyTasks = useCallback(async (startDate, endDate) => {
+    try {
+      setLoading(LoadingState.FETCHING);
+      setError(null);
+
+      const formattedStartDate = format(startDate, 'yyyy-MM-dd');
+      const formattedEndDate = format(endDate, 'yyyy-MM-dd');
+      const response = await axios.get(`${API_URL}/tasks/weekly`, {
+        params: {
+          startDate: formattedStartDate,
+          endDate: formattedEndDate
+        },
+        headers: getAuthHeaders()
+      });
+
+      setTasks(response.data);
+      setLoading(LoadingState.IDLE);
+    } catch (error) {
+      console.error('Error fetching weekly tasks:', error);
+      handleApiError(error);
+    }
+  }, [getAuthHeaders, handleApiError]);
+
+  const fetchMonthlyTasks = useCallback(async (startDate, endDate) => {
+    try {
+      setLoading(LoadingState.FETCHING);
+      setError(null);
+
+      const formattedStartDate = format(startDate, 'yyyy-MM-dd');
+      const response = await axios.get(`${API_URL}/tasks/monthly`, {
+        params: { startDate: formattedStartDate },
+        headers: getAuthHeaders()
+      });
+
+      setTasks(response.data);
+      setLoading(LoadingState.IDLE);
+    } catch (error) {
+      console.error('Error fetching monthly tasks:', error);
+      handleApiError(error);
+    }
+  }, [getAuthHeaders, handleApiError]);
+
+  const fetchYearlyTasks = useCallback(async (startDate, endDate) => {
+    try {
+      setLoading(LoadingState.FETCHING);
+      setError(null);
+
+      const year = startDate.getFullYear();
+      const response = await axios.get(`${API_URL}/tasks/yearly`, {
+        params: { year },
+        headers: getAuthHeaders()
+      });
+
+      setTasks(response.data);
+      setLoading(LoadingState.IDLE);
+    } catch (error) {
+      console.error('Error fetching yearly tasks:', error);
+      handleApiError(error);
+    }
+  }, [getAuthHeaders, handleApiError]);
 
   const value = {
     // State

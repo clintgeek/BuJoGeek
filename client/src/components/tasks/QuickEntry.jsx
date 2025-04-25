@@ -30,7 +30,7 @@ const QuickEntry = ({ open, onClose }) => {
   const parseInput = useCallback((text) => {
     const patterns = {
       priority: /!(high|medium|low)/i,
-      dateTime: /\/(today|tomorrow|next-week|next-month|next-(?:monday|tuesday|wednesday|thursday|friday|saturday|sunday)|(?:mon(?:day)?|tue(?:sday)?|wed(?:nesday)?|thu(?:rsday)?|fri(?:day)?|sat(?:urday)?|sun(?:day)?)|(?:\d{1,2})(?:st|nd|rd|th)?|\d{4}-\d{2}-\d{2})\s*(\d{1,2})(?::\d{2})?\s*([ap](?:m)?)?/i,
+      dateTime: /\/(today|tomorrow|next-week|next-month|next-(?:monday|tuesday|wednesday|thursday|friday|saturday|sunday)|(?:mon(?:day)?|tue(?:sday)?|wed(?:nesday)?|thu(?:rsday)?|fri(?:day)?|sat(?:urday)?|sun(?:day)?)|(?:\d{1,2})(?:st|nd|rd|th)?|\d{4}-\d{2}-\d{2}|\d{2}-\d{2}-\d{4}|\d{2}-\d{2})\s*(\d{1,2})(?::\d{2})?\s*([ap](?:m)?)?/i,
       timeMarker: /\b([ap](?:m)?)\b/i,
       tags: /#(\w+)/g,
       type: /[*@\-!?]/
@@ -83,6 +83,22 @@ const QuickEntry = ({ open, onClose }) => {
       'saturday': 6, 'sat': 6
     };
 
+    // Helper function to parse month names to numbers
+    const monthNameToNumber = {
+      'january': 0, 'jan': 0,
+      'february': 1, 'feb': 1,
+      'march': 2, 'mar': 2,
+      'april': 3, 'apr': 3,
+      'may': 4,
+      'june': 5, 'jun': 5,
+      'july': 6, 'jul': 6,
+      'august': 7, 'aug': 7,
+      'september': 8, 'sep': 8,
+      'october': 9, 'oct': 9,
+      'november': 10, 'nov': 10,
+      'december': 11, 'dec': 11
+    };
+
     // Extract date and time
     const dateTimeMatch = content.match(patterns.dateTime);
     if (dateTimeMatch) {
@@ -107,6 +123,37 @@ const QuickEntry = ({ open, onClose }) => {
         }
       } else if (dayNameToNumber[dateLower] !== undefined) {
         date = getNextDayOccurrence(dayNameToNumber[dateLower]);
+      } else {
+        // Handle numeric date formats
+        const parts = dateStr.split('-');
+        if (parts.length === 2) {
+          // MM-DD format - use current year
+          const currentYear = date.getFullYear();
+          const month = parseInt(parts[0]) - 1;
+          const day = parseInt(parts[1]);
+          date = new Date(currentYear, month, day);
+          date.setHours(9, 0, 0, 0); // Set to 9 AM
+        } else if (parts.length === 3) {
+          if (parts[0].length === 4) {
+            // YYYY-MM-DD format
+            date = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+            date.setHours(9, 0, 0, 0); // Set to 9 AM
+          } else {
+            // MM-DD-YYYY format
+            date = new Date(parseInt(parts[2]), parseInt(parts[0]) - 1, parseInt(parts[1]));
+            date.setHours(9, 0, 0, 0); // Set to 9 AM
+          }
+        } else {
+          // Try to parse month names
+          const monthMatch = dateLower.match(/^(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:tember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\s+(\d{1,2})(?:st|nd|rd|th)?$/i);
+          if (monthMatch) {
+            const currentYear = date.getFullYear();
+            const month = monthNameToNumber[monthMatch[1].toLowerCase()];
+            const day = parseInt(monthMatch[2]);
+            date = new Date(currentYear, month, day);
+            date.setHours(9, 0, 0, 0); // Set to 9 AM
+          }
+        }
       }
 
       // Handle time part if provided
