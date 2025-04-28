@@ -141,87 +141,173 @@ const TaskList = ({ tasks = [], viewType = 'daily' }) => {
       return `Scheduled: ${format(dateObj, 'EEEE, MMMM d, yyyy')}`;
     };
 
+    // Priority color
+    const priorityColor =
+      task.priority === 1 ? 'error.main' :
+      task.priority === 2 ? 'warning.main' :
+      task.priority === 3 ? 'info.main' : 'grey.300';
+
+    // Completed color
+    const completedColor = 'success.main';
+
+    // Double border for completed + priority
+    const isCompleted = task.status === 'completed';
+    const hasPriority = !!task.priority;
+
+    // Determine if task is carried over (pending, unscheduled, created before today)
+    let isCarriedOver = false;
+    let isOverdue = false;
+    if (!task.dueDate && task.status === 'pending') {
+      const created = new Date(task.createdAt);
+      const now = new Date();
+      // Set both to local midnight for comparison
+      created.setHours(0, 0, 0, 0);
+      now.setHours(0, 0, 0, 0);
+      if (created < now) {
+        isCarriedOver = true;
+        // Check if carried over more than 7 days
+        const msInDay = 24 * 60 * 60 * 1000;
+        const daysCarried = Math.floor((now - created) / msInDay);
+        if (daysCarried > 7) {
+          isOverdue = true;
+        }
+      }
+    }
+
     return (
-      <ListItem
-        key={task._id}
-        onClick={() => handleTaskClick(task)}
-        sx={{
-          borderLeft: '4px solid',
-          borderColor: task.priority === 1 ? 'error.main' :
-                      task.priority === 2 ? 'warning.main' :
-                      task.priority === 3 ? 'info.main' : 'grey.300',
-          mb: 1,
-          bgcolor: task.status === 'completed' ? 'rgba(56, 183, 74, 0.08)' : 'background.paper',
-          borderRadius: 1,
-          cursor: 'pointer',
-          '&:hover': {
-            bgcolor: task.status === 'completed' ? 'rgba(56, 183, 74, 0.16)' : 'action.hover'
-          }
-        }}
+      <Box
+        sx={isCompleted && hasPriority ? {
+          borderLeft: '6px solid',
+          borderColor: completedColor,
+          pl: 0,
+          ml: 0,
+          // To visually separate the double border
+          position: 'relative',
+        } : {}}
       >
-        <ListItemText
-          primary={task.content}
-          secondary={
-            <Box component="span" sx={{ display: 'flex', flexDirection: 'column' }}>
-              {task.dueDate && (
-                <Typography variant="caption" color="text.secondary">
-                  {formatDueDate(task.dueDate)}
-                </Typography>
-              )}
-              {task.tags && task.tags.length > 0 && (
-                <Typography variant="caption" color="text.secondary">
-                  Tags: {task.tags.join(', ')}
-                </Typography>
-              )}
-            </Box>
-          }
-        />
-        <ListItemSecondaryAction>
-          <IconButton
-            edge="end"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleMigrateToBacklog(task._id);
-            }}
-            sx={{ mr: 1 }}
-            title="Migrate to Backlog"
-          >
-            <ArrowBackIcon />
-          </IconButton>
-          <IconButton
-            edge="end"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleMigrateToFuture(task._id);
-            }}
-            sx={{ mr: 1 }}
-            title="Migrate to Future"
-          >
-            <ArrowForwardIcon />
-          </IconButton>
-          <IconButton
-            edge="end"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleStatusChange(task._id, task.status === 'completed' ? 'pending' : 'completed');
-            }}
-            sx={{ mr: 1 }}
-            title={task.status === 'completed' ? 'Mark as Pending' : 'Mark as Completed'}
-          >
-            <CheckIcon color={task.status === 'completed' ? 'success' : 'action'} />
-          </IconButton>
-          <IconButton
-            edge="end"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleDelete(task._id);
-            }}
-            title="Delete Task"
-          >
-            <DeleteIcon />
-          </IconButton>
-        </ListItemSecondaryAction>
-      </ListItem>
+        <ListItem
+          key={task._id}
+          onClick={() => handleTaskClick(task)}
+          sx={{
+            borderLeft: '4px solid',
+            borderColor: priorityColor,
+            mb: 1,
+            bgcolor: 'background.paper',
+            borderRadius: 1,
+            cursor: 'pointer',
+            position: 'relative',
+            '&:hover': {
+              bgcolor: 'action.hover'
+            }
+          }}
+        >
+          {/* Right edge bar for completion/carry-over status */}
+          {isCompleted && (
+            <Box
+              sx={{
+                position: 'absolute',
+                top: 0,
+                bottom: 0,
+                right: 0,
+                width: '6px',
+                borderRadius: '0 4px 4px 0',
+                bgcolor: 'success.main',
+                zIndex: 2
+              }}
+            />
+          )}
+          {isCarriedOver && !isCompleted && !isOverdue && (
+            <Box
+              sx={{
+                position: 'absolute',
+                top: 0,
+                bottom: 0,
+                right: 0,
+                width: '6px',
+                borderRadius: '0 4px 4px 0',
+                bgcolor: 'warning.main',
+                zIndex: 2
+              }}
+            />
+          )}
+          {isCarriedOver && !isCompleted && isOverdue && (
+            <Box
+              sx={{
+                position: 'absolute',
+                top: 0,
+                bottom: 0,
+                right: 0,
+                width: '6px',
+                borderRadius: '0 4px 4px 0',
+                bgcolor: 'error.main',
+                zIndex: 2
+              }}
+            />
+          )}
+          <ListItemText
+            primary={task.content}
+            secondary={
+              <Box component="span" sx={{ display: 'flex', flexDirection: 'column' }}>
+                {task.dueDate && (
+                  <Typography variant="caption" color="text.secondary">
+                    {formatDueDate(task.dueDate)}
+                  </Typography>
+                )}
+                {task.tags && task.tags.length > 0 && (
+                  <Typography variant="caption" color="text.secondary">
+                    Tags: {task.tags.join(', ')}
+                  </Typography>
+                )}
+              </Box>
+            }
+          />
+          <ListItemSecondaryAction>
+            <IconButton
+              edge="end"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleMigrateToBacklog(task._id);
+              }}
+              sx={{ mr: 1 }}
+              title="Migrate to Backlog"
+            >
+              <ArrowBackIcon />
+            </IconButton>
+            <IconButton
+              edge="end"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleMigrateToFuture(task._id);
+              }}
+              sx={{ mr: 1 }}
+              title="Migrate to Future"
+            >
+              <ArrowForwardIcon />
+            </IconButton>
+            <IconButton
+              edge="end"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleStatusChange(task._id, task.status === 'completed' ? 'pending' : 'completed');
+              }}
+              sx={{ mr: 1 }}
+              title={task.status === 'completed' ? 'Mark as Pending' : 'Mark as Completed'}
+            >
+              <CheckIcon color={task.status === 'completed' ? 'success' : 'action'} />
+            </IconButton>
+            <IconButton
+              edge="end"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDelete(task._id);
+              }}
+              title="Delete Task"
+            >
+              <DeleteIcon />
+            </IconButton>
+          </ListItemSecondaryAction>
+        </ListItem>
+      </Box>
     );
   };
 
