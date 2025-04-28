@@ -41,6 +41,7 @@ import {
 } from 'date-fns';
 import { useTaskContext, LoadingState } from '../../context/TaskContext';
 import TaskCard from '../tasks/TaskCard';
+import TaskList from '../tasks/TaskList';
 
 {/* Task Creation Form - Temporarily Hidden
 <Box sx={{ mb: 3 }}>
@@ -238,7 +239,6 @@ const MonthlyLog = () => {
 
     // Only fetch if we're not already loading and haven't fetched this range
     if (loading === LoadingState.IDLE && lastFetchRef.current !== fetchKey) {
-      console.log('Fetching monthly tasks for:', format(dateRange.start, 'yyyy-MM-dd'), 'to', format(dateRange.end, 'yyyy-MM-dd'));
       lastFetchRef.current = fetchKey;
       fetchMonthlyTasks(dateRange.start, dateRange.end);
     }
@@ -463,13 +463,11 @@ const MonthlyLog = () => {
         <DialogContent>
           <Stack spacing={2}>
             {selectedDayTasks.length > 0 ? (
-              selectedDayTasks.map(task => (
-                <TaskCard
-                  key={task._id}
-                  task={task}
-                  showMigrationActions={true}
-                />
-              ))
+              <TaskList
+                tasks={selectedDayTasks}
+                showMigrationActions={true}
+                viewType="monthly"
+              />
             ) : (
               <Typography color="text.secondary">
                 No tasks scheduled for this day

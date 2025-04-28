@@ -128,6 +128,7 @@ const DailyLog = () => {
             tasks={tasks}
             showMigrationActions={true}
             selectedDate={selectedDate}
+            viewType="daily"
           />
         </Box>
       </Paper>

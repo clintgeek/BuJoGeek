@@ -60,12 +60,11 @@ class TaskService {
               $lte: endOfDayDate
             }
           },
-          // 3. Incomplete tasks with no due date created on this day
+          // 3. Incomplete, unscheduled tasks created on or before this day (rolling forward)
           {
             dueDate: null,
             status: 'pending',
             createdAt: {
-              $gte: startOfDayDate,
               $lte: endOfDayDate
             }
           }
@@ -94,12 +93,11 @@ class TaskService {
               $lte: endOfWeekDate
             }
           },
-          // 3. Incomplete tasks with no due date created in this week
+          // 3. Incomplete, unscheduled tasks created on or before the end of this week (rolling forward)
           {
             dueDate: null,
             status: 'pending',
             createdAt: {
-              $gte: startOfWeekDate,
               $lte: endOfWeekDate
             }
           }
@@ -126,12 +124,11 @@ class TaskService {
               $lte: endOfMonthDate
             }
           },
-          // 3. Incomplete tasks with no due date created in this month
+          // 3. Incomplete, unscheduled tasks created on or before the end of this month (rolling forward)
           {
             dueDate: null,
             status: 'pending',
             createdAt: {
-              $gte: startOfMonthDate,
               $lte: endOfMonthDate
             }
           }

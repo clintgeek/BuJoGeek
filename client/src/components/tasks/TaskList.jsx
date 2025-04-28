@@ -10,14 +10,6 @@ const TaskList = ({ onEdit, currentDate }) => {
   const location = useLocation();
   const view = location.pathname.split('/')[2] || 'daily';
 
-  console.log('TaskList render:', {
-    view,
-    tasks: typeof tasks === 'object' ? Object.keys(tasks).length : 'not an object',
-    tasksContent: tasks,
-    loading,
-    error
-  });
-
   // Only show loading state when actually fetching
   if (loading === 'fetching') {
     return (
@@ -48,7 +40,6 @@ const TaskList = ({ onEdit, currentDate }) => {
   if (view === 'all') {
     // For 'all' view, tasks should be an object with dates as keys
     if (typeof tasks !== 'object') {
-      console.log('Tasks is not an object in all view:', tasks);
       return (
         <Box sx={{ p: 2 }}>
           <Typography>Invalid tasks data format</Typography>
@@ -57,7 +48,6 @@ const TaskList = ({ onEdit, currentDate }) => {
     }
 
     if (Object.keys(tasks).length === 0) {
-      console.log('No tasks found in all view');
       return (
         <Box sx={{ p: 2 }}>
           <Typography>No tasks found</Typography>
@@ -85,8 +75,6 @@ const TaskList = ({ onEdit, currentDate }) => {
     const datesWithTasks = sortedDates.filter(dateKey =>
       Array.isArray(tasks[dateKey]) && tasks[dateKey].length > 0
     );
-
-    console.log('Dates with tasks:', datesWithTasks);
 
     if (datesWithTasks.length === 0) {
       return (

@@ -7,11 +7,8 @@ const TaskView = ({ viewType, date }) => {
   const { tasks, loading, error, setView } = useTaskStore();
 
   useEffect(() => {
-    console.log('TaskView mounted/updated with viewType:', viewType, 'date:', date);
     setView(viewType, date);
   }, [viewType, date, setView]);
-
-  console.log('TaskView rendering with tasks:', tasks, 'loading:', loading, 'error:', error);
 
   if (loading) {
     return (
@@ -31,7 +28,7 @@ const TaskView = ({ viewType, date }) => {
 
   return (
     <Box>
-      <TaskList tasks={tasks} />
+      <TaskList tasks={tasks} viewType={viewType} />
     </Box>
   );
 };

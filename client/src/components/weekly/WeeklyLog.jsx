@@ -216,15 +216,7 @@ const WeeklyLog = () => {
 
                 {/* Tasks */}
                 {dayTasks.length > 0 ? (
-                  <Box sx={{ mt: 1 }}>
-                    {dayTasks.map((task) => (
-                      <TaskCard
-                        key={task._id}
-                        task={task}
-                        showMigrationActions={true}
-                      />
-                    ))}
-                  </Box>
+                  <TaskList tasks={dayTasks} showMigrationActions={true} viewType="weekly" />
                 ) : (
                   <Typography
                     variant="body2"
