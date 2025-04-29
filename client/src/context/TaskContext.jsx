@@ -591,8 +591,12 @@ const TaskProvider = ({ children }) => {
       setError(null);
 
       const formattedStartDate = format(startDate, 'yyyy-MM-dd');
+      const formattedEndDate = format(endDate, 'yyyy-MM-dd');
       const response = await axios.get(`${API_URL}/tasks/monthly`, {
-        params: { startDate: formattedStartDate },
+        params: {
+          startDate: formattedStartDate,
+          endDate: formattedEndDate
+        },
         headers: getAuthHeaders()
       });
 

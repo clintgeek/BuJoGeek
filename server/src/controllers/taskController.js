@@ -155,11 +155,13 @@ export const getWeeklyTasks = async (req, res) => {
 // Get tasks for monthly view
 export const getMonthlyTasks = async (req, res) => {
   try {
-    const dateStr = req.query.date || format(new Date(), 'yyyy-MM-dd');
+    const startDate = req.query.startDate || format(new Date(), 'yyyy-MM-dd');
+    const endDate = req.query.endDate || format(new Date(), 'yyyy-MM-dd');
+
     const tasks = await taskService.getTasksForDateRange({
       userId: req.user._id,
-      startDate: new Date(dateStr),
-      endDate: new Date(dateStr),
+      startDate: new Date(startDate),
+      endDate: new Date(endDate),
       viewType: 'monthly'
     });
     res.json(tasks);

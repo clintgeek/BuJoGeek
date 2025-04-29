@@ -104,10 +104,12 @@ const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 const DayCell = ({ day, tasks = [], isCurrentMonth, onClick }) => {
   const theme = useTheme();
-  const highPriorityTasks = tasks.filter(task => task.priority === 1);
-  const scheduledTasks = tasks.filter(task => task.signifier === '@');
-  const maxPreviewTasks = 3;
-  const hasMoreTasks = tasks.length > maxPreviewTasks;
+  // Only consider scheduled tasks for indicators
+  const scheduledTasks = tasks.filter(task => task.dueDate);
+  const hasHigh = scheduledTasks.some(task => task.priority === 1);
+  const hasMedium = scheduledTasks.some(task => task.priority === 2);
+  const hasLow = scheduledTasks.some(task => task.priority === 3);
+  const hasAny = scheduledTasks.length > 0;
 
   return (
     <Paper
@@ -132,83 +134,28 @@ const DayCell = ({ day, tasks = [], isCurrentMonth, onClick }) => {
         },
         display: 'flex',
         flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'flex-start',
       }}
     >
-      <Stack spacing={1} sx={{ flex: 1 }}>
-        {/* Date Header */}
-        <Stack
-          direction="row"
-          justifyContent="space-between"
-          alignItems="center"
-        >
-          <Typography
-            variant="h6"
-            sx={{
-              fontWeight: isToday(day) ? 700 : 500,
-              color: isToday(day) ? 'primary.main' : 'text.primary',
-              fontSize: '1.1rem',
-            }}
-          >
-            {format(day, 'd')}
-          </Typography>
-          {tasks.length > 0 && (
-            <Stack direction="row" spacing={0.5}>
-              {highPriorityTasks.length > 0 && (
-                <Tooltip title={`${highPriorityTasks.length} high priority`}>
-                  <Badge badgeContent={highPriorityTasks.length} color="error">
-                    <PriorityHighIcon fontSize="small" color="error" />
-                  </Badge>
-                </Tooltip>
-              )}
-              {scheduledTasks.length > 0 && (
-                <Tooltip title={`${scheduledTasks.length} scheduled`}>
-                  <Badge badgeContent={scheduledTasks.length} color="primary">
-                    <ScheduleIcon fontSize="small" color="primary" />
-                  </Badge>
-                </Tooltip>
-              )}
-            </Stack>
-          )}
-        </Stack>
-
-        {/* Task Preview */}
-        {tasks.length > 0 ? (
-          <Stack spacing={0.5}>
-            {tasks.slice(0, maxPreviewTasks).map(task => (
-              <Typography
-                key={task._id}
-                variant="caption"
-                noWrap
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 0.5,
-                  color: task.completed ? 'text.disabled' : 'text.primary',
-                }}
-              >
-                • {task.title || task.content}
-              </Typography>
-            ))}
-            {hasMoreTasks && (
-              <Chip
-                icon={<MoreIcon />}
-                label={`${tasks.length - maxPreviewTasks} more`}
-                size="small"
-                variant="outlined"
-                sx={{ alignSelf: 'flex-start' }}
-              />
-            )}
-          </Stack>
-        ) : (
-          <Typography
-            variant="caption"
-            color="text.secondary"
-            sx={{ fontStyle: 'italic' }}
-          >
-            No tasks
-          </Typography>
+      <Typography
+        variant="h6"
+        sx={{
+          fontWeight: isToday(day) ? 700 : 500,
+          color: isToday(day) ? 'primary.main' : 'text.primary',
+          fontSize: '1.1rem',
+        }}
+      >
+        {format(day, 'd')}
+      </Typography>
+      <Box sx={{ display: 'flex', gap: 0.5, mt: 0.5 }}>
+        {hasHigh && <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: 'error.main' }} />}
+        {hasMedium && <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: '#FFD700' }} />}
+        {hasLow && <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: 'info.main' }} />}
+        {!hasHigh && !hasMedium && !hasLow && hasAny && (
+          <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: 'grey.400' }} />
         )}
-      </Stack>
+      </Box>
     </Paper>
   );
 };

@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { Box, CircularProgress, Typography } from '@mui/material';
 import useTaskStore from '../store/taskStore';
 import TaskList from './TaskList';
+import MonthlyLog from './monthly/MonthlyLog';
 
 const TaskView = ({ viewType, date }) => {
   const { tasks, loading, error, setView } = useTaskStore();
@@ -22,6 +23,14 @@ const TaskView = ({ viewType, date }) => {
     return (
       <Box p={2}>
         <Typography color="error">{error}</Typography>
+      </Box>
+    );
+  }
+
+  if (viewType === 'monthly') {
+    return (
+      <Box>
+        <MonthlyLog date={date} />
       </Box>
     );
   }
