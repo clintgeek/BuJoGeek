@@ -1,4 +1,4 @@
-import { Box, AppBar, Toolbar, Typography, Button, Container } from '@mui/material';
+import { Box, AppBar, Toolbar, Typography, Button, Container, IconButton } from '@mui/material';
 import { Link, Routes, Route } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import LoginPage from '../pages/LoginPage';
@@ -8,6 +8,7 @@ import TemplatesPage from '../pages/TemplatesPage';
 import QuickEntry from './tasks/QuickEntry';
 import ProtectedRoute from './ProtectedRoute';
 import { useState, useEffect } from 'react';
+import { Menu as MenuIcon, CheckBox as CheckBoxIcon } from '@mui/icons-material';
 
 const MainContent = () => {
   const { user, logout } = useAuth();
@@ -47,10 +48,15 @@ const MainContent = () => {
               color: 'inherit',
               fontFamily: '"Roboto Mono", monospace',
               fontWeight: 700,
-              letterSpacing: 1
+              letterSpacing: 1,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1
             }}
           >
-            BuJoGeek <span style={{ fontFamily: 'monospace', fontSize: '16px' }}>&lt;/&gt;</span>
+            <CheckBoxIcon sx={{ fontSize: 24 }} />
+            BuJoGeek
+            <span style={{ fontFamily: 'monospace', fontSize: '16px' }}>MARKER &lt;/&gt;</span>
           </Typography>
 
           {user ? (

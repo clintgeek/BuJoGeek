@@ -24,7 +24,6 @@ import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
 const AppLayout = ({
-  title,
   icon: AppIcon,
   navigation,
   children
@@ -55,24 +54,54 @@ const AppLayout = ({
       position: 'relative'
     }}>
       {/* Header */}
-      <AppBar position="fixed" sx={{ bgcolor: 'primary.main', zIndex: (theme) => theme.zIndex.drawer + 1 }}>
-        <Toolbar>
+      <AppBar position="fixed" sx={{
+        bgcolor: 'primary.main',
+        zIndex: (theme) => theme.zIndex.drawer + 1,
+        height: 60
+      }}>
+        <Toolbar sx={{ height: 60, minHeight: 60 }}>
           <IconButton
             color="inherit"
             edge="start"
             onClick={handleDrawerToggle}
-            sx={{ mr: 2 }}
+            sx={{ mr: 1 }}
           >
             <MenuIcon />
           </IconButton>
 
-          {AppIcon && (
-            <AppIcon sx={{ ml: 2, mr: 1 }} />
-          )}
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            {AppIcon && (
+              <AppIcon sx={{
+                fontSize: 24,
+                mr: 0.5,
+                color: 'inherit'
+              }} />
+            )}
 
-          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-            {title}Geek <Typography component="span" sx={{ opacity: 0.7 }}>{'/>'}</Typography>
-          </Typography>
+            <Typography
+              variant="h6"
+              sx={{
+                fontWeight: 'bold',
+                fontSize: '20px',
+                display: 'flex',
+                alignItems: 'center'
+              }}
+            >
+              BuJoGeek
+              <Typography
+                component="span"
+                sx={{
+                  fontFamily: 'monospace',
+                  fontSize: '16px',
+                  fontWeight: 'bold',
+                  ml: 0.5,
+                  mt: 0.5
+                }}
+              >{'</>'}</Typography>
+            </Typography>
+          </Box>
+
+          <Box sx={{ flexGrow: 1 }} />
         </Toolbar>
       </AppBar>
 

@@ -4,7 +4,7 @@ import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { AuthProvider } from './context/AuthContext';
 import { TaskProvider } from './context/TaskContext.jsx';
-import AssignmentIcon from '@mui/icons-material/Assignment';
+import { CheckBoxOutlined as CheckBoxIcon } from '@mui/icons-material';
 import theme from './theme/theme';
 import AppLayout from './components/layout/AppLayout';
 import MainContent from './components/MainContent';
@@ -23,8 +23,7 @@ function App() {
           <TaskProvider>
             <Router>
               <AppLayout
-                title="BuJo"
-                icon={AssignmentIcon}
+                icon={CheckBoxIcon}
                 navigation={<BottomNav onAddClick={() => setIsEditorOpen(true)} />}
               >
                 <MainContent />

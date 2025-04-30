@@ -3,10 +3,10 @@ import { createTheme } from '@mui/material';
 const theme = createTheme({
   palette: {
     primary: {
-      main: '#4285f4', // GeekSuite theme blue
-      light: '#7dabf7',
-      dark: '#2c5499',
-      contrastText: '#ffffff',
+      main: '#6098CC', // GeekSuite primary blue
+      light: '#81B1D9',
+      dark: '#4B7AA3',
+      contrastText: '#FFFFFF',
     },
     secondary: {
       main: '#1976D2',
@@ -64,6 +64,7 @@ const theme = createTheme({
     h6: {
       fontSize: '0.875rem',
       fontWeight: 500,
+      letterSpacing: '0.02em',
     },
     body1: {
       fontSize: '0.875rem',
@@ -87,7 +88,7 @@ const theme = createTheme({
       },
       styleOverrides: {
         root: {
-          height: 64, // Standard header height
+          height: 60, // GeekSuite standard header height
         },
       },
     },
