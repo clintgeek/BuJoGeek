@@ -36,14 +36,23 @@ const QuickEntry = ({ open, onClose }) => {
       dateTime: /\/(today|tomorrow|next-week|next-month|next-(?:monday|tuesday|wednesday|thursday|friday|saturday|sunday)|(?:mon(?:day)?|tue(?:sday)?|wed(?:nesday)?|thu(?:rsday)?|fri(?:day)?|sat(?:urday)?|sun(?:day)?)|(?:\d{4}-\d{2}-\d{2})|(?:\d{2}-\d{2}-\d{4})|(?:\d{2}-\d{2})|(?:\d{1,2})(?:st|nd|rd|th)?|(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:tember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\s+\d{1,2}(?:st|nd|rd|th)?)(?:\s+(\d{1,2})(?::(\d{2}))?\s*(?:([ap]\.?m\.?))?)?/i,
       timeMarker: /\b([ap]\.?m\.?)\b/i,
       tags: /#(\w+)/g,
-      type: /[*@\-!?]/
+      type: /[*@\-!?]/,
+      note: /\^(.+)$/
     };
 
     let content = text;
     let dueDate = null;
     let priority = null;
     let type = null;
+    let note = null;
     const tags = [];
+
+    // Extract note (should be done first since it's at the end)
+    const noteMatch = content.match(patterns.note);
+    if (noteMatch) {
+      note = noteMatch[1].trim();
+      content = content.replace(noteMatch[0], '').trim();
+    }
 
     // Extract type/signifier (can be anywhere in the text)
     const typeMatch = content.match(patterns.type);
@@ -261,6 +270,14 @@ const QuickEntry = ({ open, onClose }) => {
       });
     }
 
+    if (note) {
+      newSuggestions.push({
+        type: 'note',
+        text: `Note: ${note}`,
+        icon: NoteIcon
+      });
+    }
+
     setSuggestions(newSuggestions);
 
     return {
@@ -268,7 +285,8 @@ const QuickEntry = ({ open, onClose }) => {
       signifier: type,
       priority,
       dueDate,
-      tags
+      tags,
+      note
     };
   }, []);
 
@@ -348,6 +366,7 @@ const QuickEntry = ({ open, onClose }) => {
           <br />• Times: 9am, 2pm, 14:00 (defaults to 9am)
           <br />• Priority: !high, !medium, !low
           <br />• Tags: #work, #personal, etc.
+          <br />• Notes: ^your note text here
         </Typography>
       </DialogContent>
     </Dialog>

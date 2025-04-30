@@ -43,7 +43,8 @@ const TaskEditor = ({ open, onClose, task = null }) => {
     priority: null,
     dueDate: null,
     createdAt: new Date(),
-    tags: []
+    tags: [],
+    note: ''
   });
   const [tagInput, setTagInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -57,7 +58,8 @@ const TaskEditor = ({ open, onClose, task = null }) => {
         priority: task.priority,
         dueDate: task.dueDate ? new Date(task.dueDate) : null,
         createdAt: task.createdAt ? new Date(task.createdAt) : new Date(),
-        tags: task.tags || []
+        tags: task.tags || [],
+        note: task.note || ''
       });
     }
   }, [task]);
@@ -134,6 +136,15 @@ const TaskEditor = ({ open, onClose, task = null }) => {
               rows={3}
               required
               fullWidth
+            />
+
+            <TextField
+              fullWidth
+              label="Note"
+              value={formData.note}
+              onChange={handleChange('note')}
+              multiline
+              rows={3}
             />
 
             <FormControl fullWidth>

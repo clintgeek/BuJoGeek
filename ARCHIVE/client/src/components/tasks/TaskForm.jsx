@@ -16,7 +16,7 @@ import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { Close as CloseIcon } from '@mui/icons-material';
-import useTaskStore from '../store/taskStore';
+import useTaskStore from '../../store/taskStore';
 
 const TaskForm = ({ onClose }) => {
   const { createTask } = useTaskStore();

@@ -96,71 +96,65 @@ const TaskCard = ({ task, onEdit }) => {
     <>
       <ListItem
         sx={{
-          borderBottom: '1px solid',
-          borderColor: 'divider',
-          '&:hover': {
-            bgcolor: 'action.hover'
-          },
+          borderRadius: 1,
+          mb: 1,
+          bgcolor: 'background.paper'
         }}
-        secondaryAction={
-          <Box>
-            <Tooltip title="Move to backlog">
-              <IconButton edge="end" aria-label="backlog" onClick={handleMoveToBacklog} sx={{ mr: 1 }}>
-                <BacklogIcon />
-              </IconButton>
-            </Tooltip>
-            <Tooltip title="Schedule forward">
-              <IconButton edge="end" aria-label="schedule" onClick={handleScheduleForward} sx={{ mr: 1 }}>
-                <ForwardIcon />
-              </IconButton>
-            </Tooltip>
-            <IconButton edge="end" aria-label="edit" onClick={() => setIsEditing(true)} sx={{ mr: 1 }}>
-              <EditIcon />
-            </IconButton>
-            <IconButton edge="end" aria-label="delete" onClick={handleDelete}>
-              <DeleteIcon />
-            </IconButton>
-          </Box>
-        }
       >
-        <ListItemIcon>
-          <IconButton onClick={handleStatusToggle}>
+        <ListItemIcon onClick={handleStatusToggle} sx={{ cursor: 'pointer' }}>
             {task.status === 'completed' ? (
               <CheckCircleIcon color="success" />
             ) : (
               <UncheckedIcon />
             )}
-          </IconButton>
         </ListItemIcon>
+
         <ListItemText
-          primary={cleanContent(task.content)}
+          primary={
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Typography
+                component="span"
+                sx={{
+                  textDecoration: task.status === 'completed' ? 'line-through' : 'none'
+                }}
+              >
+                {cleanContent(task.content)}
+              </Typography>
+              {task.priority && (
+                <FlagIcon color={priorityColors[task.priority]} fontSize="small" />
+              )}
+            </Box>
+          }
           secondary={
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5, flexWrap: 'wrap' }}>
-              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                {task.tags?.map((tag) => (
+            <Box sx={{ mt: 0.5 }}>
+              {task.dueDate && (
+                <Typography variant="body2" color="text.secondary" component="span">
+                  Due: {format(new Date(task.dueDate), 'MMM d, yyyy h:mm a')}
+                </Typography>
+              )}
+              {task.note && (
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{
+                    mt: 0.5,
+                    fontStyle: 'italic',
+                    display: 'block'
+                  }}
+                >
+                  Note: {task.note}
+                </Typography>
+              )}
+              {task.tags?.length > 0 && (
+                <Box sx={{ mt: 0.5 }}>
+                  {task.tags.map((tag) => (
                   <Chip
                     key={tag}
                     label={tag}
                     size="small"
-                    sx={{ height: 20 }}
+                      sx={{ mr: 0.5 }}
                   />
                 ))}
-                {task.subtasks?.length > 0 && (
-                  <Chip
-                    label={`${task.subtasks.length} subtask${task.subtasks.length === 1 ? '' : 's'}`}
-                    size="small"
-                    variant="outlined"
-                    sx={{ height: 20 }}
-                  />
-                )}
-              </Box>
-              {task.dueDate && (
-                <Box sx={{ display: 'flex', alignItems: 'center', ml: 'auto' }}>
-                  <ScheduleIcon fontSize="small" sx={{ mr: 0.5 }} />
-                  <Typography variant="body2" component="span">
-                    {format(new Date(task.dueDate), 'EEE, MMM d, yyyy h:mm a')}
-                    {task.signifier === '@' && ' (event)'}
-                  </Typography>
                 </Box>
               )}
             </Box>

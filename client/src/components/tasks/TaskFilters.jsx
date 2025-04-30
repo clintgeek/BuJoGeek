@@ -1,6 +1,6 @@
 import React from 'react';
 import { Box, FormControl, InputLabel, Select, MenuItem, Checkbox, ListItemText, useTheme, useMediaQuery } from '@mui/material';
-import useTaskStore from '../store/taskStore';
+import useTaskStore from '../../store/taskStore';
 import { useLocation } from 'react-router-dom';
 
 const TaskFilters = () => {

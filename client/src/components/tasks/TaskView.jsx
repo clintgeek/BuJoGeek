@@ -1,8 +1,8 @@
 import React, { useEffect } from 'react';
 import { Box, CircularProgress, Typography } from '@mui/material';
-import useTaskStore from '../store/taskStore';
+import useTaskStore from '../../store/taskStore';
 import TaskList from './TaskList';
-import MonthlyLog from './monthly/MonthlyLog';
+import MonthlyLog from '../monthly/MonthlyLog';
 
 const TaskView = ({ viewType, date }) => {
   const { tasks, loading, error, setView } = useTaskStore();

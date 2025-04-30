@@ -40,6 +40,11 @@ const taskSchema = new mongoose.Schema({
     max: 3,
     default: null
   },
+  note: {
+    type: String,
+    trim: true,
+    default: null
+  },
   tags: [{
     type: String,
     trim: true

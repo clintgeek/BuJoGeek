@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { Box } from '@mui/material';
 import { useLocation } from 'react-router-dom';
-import TaskView from '../components/TaskView';
+import TaskView from '../components/tasks/TaskView';
 import DateNavigation from '../components/DateNavigation';
-import TaskFilters from '../components/TaskFilters';
+import TaskFilters from '../components/tasks/TaskFilters';
 
 const TasksPage = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
