@@ -1,9 +1,31 @@
-import React from 'react';
-import { Box, IconButton, Typography } from '@mui/material';
-import { ChevronLeft as ChevronLeftIcon, ChevronRight as ChevronRightIcon } from '@mui/icons-material';
+import React, { forwardRef } from 'react';
+import { Box, IconButton, Typography, Stack, useTheme, useMediaQuery } from '@mui/material';
+import {
+  ChevronLeft as ChevronLeftIcon,
+  ChevronRight as ChevronRightIcon,
+  CalendarToday as CalendarIcon
+} from '@mui/icons-material';
 import { format, addDays, subDays, addWeeks, subWeeks, addMonths, subMonths } from 'date-fns';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+import TaskFilters from './TaskFilters';
+import { useLocation } from 'react-router-dom';
+
+const CustomPickerButton = forwardRef(({ inputProps, InputProps, onClick }, ref) => (
+  <IconButton ref={ref} onClick={onClick || InputProps?.onClick}>
+    <CalendarIcon />
+  </IconButton>
+));
+
+CustomPickerButton.displayName = 'CustomPickerButton';
 
 const DateNavigation = ({ currentDate, onDateChange }) => {
+  const location = useLocation();
+  const isDailyView = !location.pathname.split('/')[2] || location.pathname.split('/')[2] === 'daily';
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+
   const handlePrevious = () => {
     let newDate;
     switch (window.location.pathname.split('/')[2]) {
@@ -49,24 +71,58 @@ const DateNavigation = ({ currentDate, onDateChange }) => {
     <Box
       sx={{
         display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
+        flexDirection: isDailyView && !isMobile ? 'row' : 'column',
+        gap: 2,
         p: 2,
         borderBottom: 1,
-        borderColor: 'divider'
+        borderColor: 'divider',
+        bgcolor: 'background.paper',
       }}
     >
-      <IconButton onClick={handlePrevious}>
-        <ChevronLeftIcon />
-      </IconButton>
+      <Stack
+        direction="row"
+        alignItems="center"
+        spacing={2}
+        sx={{
+          minWidth: isDailyView ? 'auto' : 'none',
+          justifyContent: 'space-between',
+          width: '100%'
+        }}
+      >
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <IconButton onClick={handlePrevious}>
+            <ChevronLeftIcon />
+          </IconButton>
 
-      <Typography variant="h6" component="div">
-        {formatDate()}
-      </Typography>
+          <Typography variant="h6" component="div" noWrap>
+            {formatDate()}
+          </Typography>
 
-      <IconButton onClick={handleNext}>
-        <ChevronRightIcon />
-      </IconButton>
+          <LocalizationProvider dateAdapter={AdapterDateFns}>
+            <DatePicker
+              value={currentDate}
+              onChange={onDateChange}
+              enableAccessibleFieldDOMStructure={false}
+              slots={{
+                textField: CustomPickerButton
+              }}
+              slotProps={{
+                popper: {
+                  sx: { zIndex: 1300 }
+                }
+              }}
+            />
+          </LocalizationProvider>
+
+          <IconButton onClick={handleNext}>
+            <ChevronRightIcon />
+          </IconButton>
+        </Box>
+
+        {isDailyView && !isMobile && <TaskFilters />}
+      </Stack>
+
+      {isDailyView && isMobile && <TaskFilters />}
     </Box>
   );
 };

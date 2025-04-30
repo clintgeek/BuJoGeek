@@ -231,9 +231,9 @@ const TaskList = ({ tasks = [], viewType = 'daily' }) => {
           // To visually separate the double border
           position: 'relative',
         } : {}}
+        key={task._id}
       >
         <ListItem
-          key={task._id}
           onClick={() => handleTaskClick(task)}
           sx={{
             borderLeft: '4px solid',
@@ -376,21 +376,6 @@ const TaskList = ({ tasks = [], viewType = 'daily' }) => {
   if (viewType === 'daily') {
     return (
       <Box>
-        <Typography
-          variant="subtitle1"
-          sx={{
-            px: 2,
-            py: 1,
-            bgcolor: 'background.paper',
-            borderBottom: '1px solid',
-            borderColor: 'divider',
-            position: 'sticky',
-            top: 0,
-            zIndex: 1
-          }}
-        >
-          Tasks
-        </Typography>
         <List>
           {sortedTasks.map(renderTask)}
         </List>
