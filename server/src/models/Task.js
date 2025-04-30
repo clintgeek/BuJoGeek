@@ -118,13 +118,13 @@ taskSchema.virtual('taskType').get(function() {
   return signifierMap[this.signifier] || 'task';
 });
 
-// Method to migrate task to future
-taskSchema.methods.migrateToFuture = function(futureDate) {
+// Method to schedule task for a specific date
+taskSchema.methods.migrateToFuture = function(date) {
   this.status = 'migrated_future';
   this.signifier = '>';
   this.migratedFrom = new Date();
-  this.migratedTo = futureDate;
-  this.dueDate = futureDate;
+  this.migratedTo = date;
+  this.dueDate = date;
   return this.save();
 };
 

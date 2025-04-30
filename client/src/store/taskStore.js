@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import axios from 'axios';
-import { format } from 'date-fns';
+import { format, startOfYear, endOfYear, isSameYear } from 'date-fns';
 
 // Create axios instance with default config
 const api = axios.create({
@@ -32,9 +32,47 @@ const useTaskStore = create((set, get) => ({
   },
 
   // Set the current view and date
-  setView: (view, date = new Date()) => {
-    set({ currentView: view, currentDate: date });
-    get().fetchTasks();
+  setView: async (viewType, date) => {
+    const { currentView, currentDate } = get();
+
+    // Don't update if the view and date haven't changed
+    if (currentView === viewType && isSameYear(currentDate, date)) {
+      return;
+    }
+
+    set({ loading: true, error: null });
+    try {
+      let endpoint = '/tasks';
+      let params = {};
+
+      // Handle different view types
+      if (viewType === 'daily') {
+        endpoint += '/daily';
+        params.date = format(date, 'yyyy-MM-dd');
+      } else if (viewType === 'weekly') {
+        endpoint += '/weekly';
+        params.date = format(date, 'yyyy-MM-dd');
+      } else if (viewType === 'monthly') {
+        endpoint += '/monthly';
+        params.date = format(date, 'yyyy-MM-dd');
+      } else if (viewType === 'year') {
+        // For year view, we'll fetch all tasks for the year
+        const yearStart = startOfYear(date);
+        const yearEnd = endOfYear(date);
+        params.startDate = format(yearStart, 'yyyy-MM-dd');
+        params.endDate = format(yearEnd, 'yyyy-MM-dd');
+      }
+
+      const response = await api.get(endpoint, { params });
+      set({
+        tasks: response.data,
+        loading: false,
+        currentView: viewType,
+        currentDate: date
+      });
+    } catch (err) {
+      set({ error: err.message, loading: false });
+    }
   },
 
   // Set filters
@@ -161,11 +199,11 @@ const useTaskStore = create((set, get) => ({
     }
   },
 
-  // Migrate task to future date
-  migrateToFuture: async (taskId, futureDate) => {
+  // Schedule task for a specific date
+  migrateToFuture: async (taskId, date) => {
     set({ loading: true, error: null });
     try {
-      const response = await api.post(`/tasks/${taskId}/migrate-future`, { futureDate });
+      const response = await api.post(`/tasks/${taskId}/schedule`, { date });
       set(state => ({
         tasks: state.tasks.map(task =>
           task._id === taskId ? response.data : task
@@ -174,7 +212,7 @@ const useTaskStore = create((set, get) => ({
       }));
       return response.data;
     } catch (error) {
-      console.error('Error migrating task to future:', error);
+      console.error('Error scheduling task:', error);
       set({ error: error.message, loading: false });
       throw error;
     }

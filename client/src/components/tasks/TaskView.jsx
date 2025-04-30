@@ -3,6 +3,7 @@ import { Box, CircularProgress, Typography } from '@mui/material';
 import useTaskStore from '../../store/taskStore';
 import TaskList from './TaskList';
 import MonthlyLog from '../monthly/MonthlyLog';
+import YearlyLog from '../yearly/YearlyLog';
 
 const TaskView = ({ viewType, date }) => {
   const { tasks, loading, error, setView } = useTaskStore();
@@ -31,6 +32,14 @@ const TaskView = ({ viewType, date }) => {
     return (
       <Box>
         <MonthlyLog date={date} />
+      </Box>
+    );
+  }
+
+  if (viewType === 'year') {
+    return (
+      <Box>
+        <YearlyLog date={date} />
       </Box>
     );
   }

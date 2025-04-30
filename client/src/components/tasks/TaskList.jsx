@@ -370,7 +370,7 @@ const TaskList = ({ tasks = [], viewType = 'daily' }) => {
                 handleMigrateToFuture(task._id);
               }}
               sx={{ mr: 1 }}
-              title="Migrate to Future"
+              title="Schedule Task"
             >
               <ArrowForwardIcon />
             </IconButton>
@@ -414,14 +414,13 @@ const TaskList = ({ tasks = [], viewType = 'daily' }) => {
         )}
         {/* Future Date Dialog */}
         <Dialog open={migrationDialogOpen} onClose={() => setMigrationDialogOpen(false)}>
-          <DialogTitle>Select Future Date</DialogTitle>
+          <DialogTitle>Select Date</DialogTitle>
           <DialogContent>
             <LocalizationProvider dateAdapter={AdapterDateFns}>
               <DateTimePicker
-                label="Future Date and Time"
+                label="Date and Time"
                 value={futureDate}
                 onChange={(newDate) => setFutureDate(newDate)}
-                minDate={new Date()}
                 slotProps={{
                   textField: {
                     fullWidth: true,
@@ -519,14 +518,13 @@ const TaskList = ({ tasks = [], viewType = 'daily' }) => {
         )}
         {/* Future Date Dialog */}
         <Dialog open={migrationDialogOpen} onClose={() => setMigrationDialogOpen(false)}>
-          <DialogTitle>Select Future Date</DialogTitle>
+          <DialogTitle>Select Date</DialogTitle>
           <DialogContent>
             <LocalizationProvider dateAdapter={AdapterDateFns}>
               <DateTimePicker
-                label="Future Date and Time"
+                label="Date and Time"
                 value={futureDate}
                 onChange={(newDate) => setFutureDate(newDate)}
-                minDate={new Date()}
                 slotProps={{
                   textField: {
                     fullWidth: true,
