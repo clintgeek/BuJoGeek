@@ -20,6 +20,9 @@ import EventIcon from '@mui/icons-material/Event';
 import FlagIcon from '@mui/icons-material/Flag';
 import TaskIcon from '@mui/icons-material/Task';
 import TagIcon from '@mui/icons-material/Tag';
+import AssignmentIcon from '@mui/icons-material/Assignment';
+import NoteIcon from '@mui/icons-material/Note';
+import HelpIcon from '@mui/icons-material/Help';
 import { useTaskContext } from '../../context/TaskContext.jsx';
 
 const QuickEntry = ({ open, onClose }) => {
@@ -30,8 +33,8 @@ const QuickEntry = ({ open, onClose }) => {
   const parseInput = useCallback((text) => {
     const patterns = {
       priority: /!(high|medium|low)/i,
-      dateTime: /\/(today|tomorrow|next-week|next-month|next-(?:monday|tuesday|wednesday|thursday|friday|saturday|sunday)|(?:mon(?:day)?|tue(?:sday)?|wed(?:nesday)?|thu(?:rsday)?|fri(?:day)?|sat(?:urday)?|sun(?:day)?)|(?:\d{1,2})(?:st|nd|rd|th)?|\d{4}-\d{2}-\d{2}|\d{2}-\d{2}-\d{4}|\d{2}-\d{2})\s*(\d{1,2})(?::\d{2})?\s*([ap](?:m)?)?/i,
-      timeMarker: /\b([ap](?:m)?)\b/i,
+      dateTime: /\/(today|tomorrow|next-week|next-month|next-(?:monday|tuesday|wednesday|thursday|friday|saturday|sunday)|(?:mon(?:day)?|tue(?:sday)?|wed(?:nesday)?|thu(?:rsday)?|fri(?:day)?|sat(?:urday)?|sun(?:day)?)|(?:\d{4}-\d{2}-\d{2})|(?:\d{2}-\d{2}-\d{4})|(?:\d{2}-\d{2})|(?:\d{1,2})(?:st|nd|rd|th)?|(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:tember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\s+\d{1,2}(?:st|nd|rd|th)?)(?:\s+(\d{1,2})(?::(\d{2}))?\s*(?:([ap]\.?m\.?))?)?/i,
+      timeMarker: /\b([ap]\.?m\.?)\b/i,
       tags: /#(\w+)/g,
       type: /[*@\-!?]/
     };
@@ -39,7 +42,7 @@ const QuickEntry = ({ open, onClose }) => {
     let content = text;
     let dueDate = null;
     let priority = null;
-    let type = '*';
+    let type = null;
     const tags = [];
 
     // Extract type/signifier (can be anywhere in the text)
@@ -102,7 +105,7 @@ const QuickEntry = ({ open, onClose }) => {
     // Extract date and time
     const dateTimeMatch = content.match(patterns.dateTime);
     if (dateTimeMatch) {
-      const [fullMatch, dateStr, timeStr, meridian] = dateTimeMatch;
+      const [fullMatch, dateStr, timeStr, minutes, meridian] = dateTimeMatch;
       let date = new Date();
       const dateLower = dateStr.toLowerCase();
 
@@ -126,6 +129,7 @@ const QuickEntry = ({ open, onClose }) => {
       } else {
         // Handle numeric date formats
         const parts = dateStr.split('-');
+
         if (parts.length === 2) {
           // MM-DD format - use current year
           const currentYear = date.getFullYear();
@@ -136,11 +140,17 @@ const QuickEntry = ({ open, onClose }) => {
         } else if (parts.length === 3) {
           if (parts[0].length === 4) {
             // YYYY-MM-DD format
-            date = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+            const year = parseInt(parts[0]);
+            const month = parseInt(parts[1]) - 1;
+            const day = parseInt(parts[2]);
+            date = new Date(year, month, day);
             date.setHours(9, 0, 0, 0); // Set to 9 AM
           } else {
             // MM-DD-YYYY format
-            date = new Date(parseInt(parts[2]), parseInt(parts[0]) - 1, parseInt(parts[1]));
+            const month = parseInt(parts[0]) - 1;
+            const day = parseInt(parts[1]);
+            const year = parseInt(parts[2]);
+            date = new Date(year, month, day);
             date.setHours(9, 0, 0, 0); // Set to 9 AM
           }
         } else {
@@ -159,46 +169,70 @@ const QuickEntry = ({ open, onClose }) => {
       // Handle time part if provided
       if (timeStr) {
         let hours = parseInt(timeStr);
-        let meridianText = meridian?.toLowerCase();
+        let minutes = dateTimeMatch[3] ? parseInt(dateTimeMatch[3]) : 0;
+        let meridianText = meridian?.toLowerCase().replace(/\./g, '');
 
         // Check for standalone meridian marker after the time
         if (!meridianText) {
           const remainingText = content.substring(content.indexOf(fullMatch) + fullMatch.length);
           const markerMatch = remainingText.match(patterns.timeMarker);
           if (markerMatch) {
-            meridianText = markerMatch[1].toLowerCase();
+            meridianText = markerMatch[1].toLowerCase().replace(/\./g, '');
           }
         }
 
         // Convert to 24-hour format if needed
         if (meridianText) {
-          if (meridianText.startsWith('p') && hours < 12) hours += 12;
-          if (meridianText.startsWith('a') && hours === 12) hours = 0;
+          if (meridianText.startsWith('p') && hours < 12) {
+            hours += 12;
+          } else if (meridianText.startsWith('a') && hours === 12) {
+            hours = 0;
+          }
         }
 
-        date.setHours(hours, 0, 0, 0);
+        date.setHours(hours, minutes, 0, 0);
       } else {
         // If no time provided, set to 9 AM
         date.setHours(9, 0, 0, 0);
       }
 
       dueDate = date;
-      content = content.replace(dateTimeMatch[0], '').trim();
+      content = content.replace(fullMatch, '').trim();
     }
 
     // Extract tags
     let tagMatch;
-    while ((tagMatch = patterns.tags.exec(text)) !== null) {
+    while ((tagMatch = patterns.tags.exec(content)) !== null) {
       tags.push(tagMatch[1]);
       content = content.replace(tagMatch[0], '').trim();
     }
 
     const newSuggestions = [];
 
-    if (type !== '*') {
+    if (type) {
+      const typeMap = {
+        '*': 'Task',
+        '@': 'Event',
+        '-': 'Note',
+        '?': 'Question'
+      };
+      const iconMap = {
+        '*': AssignmentIcon,
+        '@': EventIcon,
+        '-': NoteIcon,
+        '?': HelpIcon
+      };
       newSuggestions.push({
         type: 'type',
-        text: `Type: ${type}`,
+        text: `Type: ${typeMap[type] || type}`,
+        icon: iconMap[type] || TaskIcon
+      });
+    }
+
+    if (content.trim()) {
+      newSuggestions.push({
+        type: 'title',
+        text: `Title: ${content.trim()}`,
         icon: TaskIcon
       });
     }
@@ -309,8 +343,7 @@ const QuickEntry = ({ open, onClose }) => {
         <Divider sx={{ my: 2 }} />
         <Typography variant="caption" color="text.secondary">
           Tips:
-          <br />• Type markers can be anywhere in the text:
-          <br />  * (task), @ (event), - (note), ! (priority), ? (question)
+          <br />  * (task), @ (event), - (note), ? (question)
           <br />• Dates: /today, /tomorrow, /monday, /next-week
           <br />• Times: 9am, 2pm, 14:00 (defaults to 9am)
           <br />• Priority: !high, !medium, !low
