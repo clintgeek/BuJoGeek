@@ -61,8 +61,12 @@ const useTaskStore = create((set, get) => ({
         }
       });
 
-      // Ensure we have an array of tasks
-      const tasks = Array.isArray(response.data) ? response.data : [];
+      // For daily view, ensure we have an array
+      // For other views, preserve the data structure
+      const tasks = currentView === 'daily'
+        ? (Array.isArray(response.data) ? response.data : [])
+        : response.data;
+
       set({ tasks, loading: false });
     } catch (error) {
       set({ error: error.message, loading: false, tasks: [] });
@@ -152,25 +156,6 @@ const useTaskStore = create((set, get) => ({
       return response.data;
     } catch (error) {
       console.error('Error adding subtask:', error);
-      set({ error: error.message, loading: false });
-      throw error;
-    }
-  },
-
-  // Migrate task to backlog
-  migrateToBacklog: async (taskId) => {
-    set({ loading: true, error: null });
-    try {
-      const response = await api.post(`/tasks/${taskId}/migrate-back`);
-      set(state => ({
-        tasks: state.tasks.map(task =>
-          task._id === taskId ? response.data : task
-        ),
-        loading: false
-      }));
-      return response.data;
-    } catch (error) {
-      console.error('Error migrating task to backlog:', error);
       set({ error: error.message, loading: false });
       throw error;
     }

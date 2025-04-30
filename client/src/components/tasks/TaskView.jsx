@@ -41,7 +41,6 @@ const TaskView = ({ viewType, date }) => {
         border: 'none !important'
       }
     }}>
-      MARKER
       <TaskList tasks={tasks} viewType={viewType} />
     </Box>
   );

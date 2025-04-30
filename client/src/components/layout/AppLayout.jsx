@@ -41,8 +41,7 @@ const AppLayout = ({
     { label: 'Daily', icon: CalendarTodayIcon, path: '/tasks/daily' },
     { label: 'Weekly', icon: CalendarViewWeekIcon, path: '/tasks/weekly' },
     { label: 'Monthly', icon: CalendarViewMonthIcon, path: '/tasks/monthly' },
-    { label: 'Year', icon: ViewModuleIcon, path: '/tasks/year' },
-    { label: 'Backlog', icon: ViewListIcon, path: '/tasks/backlog' },
+    { label: 'Year', icon: ViewModuleIcon, path: '/tasks/year' }
   ];
 
   return (

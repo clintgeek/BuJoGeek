@@ -52,13 +52,17 @@ class TaskService {
               $lte: endOfDayDate
             }
           },
-          // 2. Tasks completed on this day (regardless of due date)
+          // 2. Tasks completed on this day that were either due today or had no due date
           {
             status: 'completed',
             updatedAt: {
               $gte: startOfDayDate,
               $lte: endOfDayDate
-            }
+            },
+            $or: [
+              { dueDate: { $gte: startOfDayDate, $lte: endOfDayDate } },
+              { dueDate: null }
+            ]
           },
           // 3. Incomplete, unscheduled tasks created on or before this day (rolling forward)
           {
@@ -78,14 +82,14 @@ class TaskService {
         endOfWeekDate.setUTCHours(23, 59, 59, 999);
 
         query.$or = [
-          // 1. Tasks due in this week (regardless of status)
+          // 1. Tasks due this week (regardless of status)
           {
             dueDate: {
               $gte: startOfWeekDate,
               $lte: endOfWeekDate
             }
           },
-          // 2. Tasks completed in this week (regardless of due date)
+          // 2. Tasks completed this week
           {
             status: 'completed',
             updatedAt: {
@@ -93,7 +97,7 @@ class TaskService {
               $lte: endOfWeekDate
             }
           },
-          // 3. Incomplete, unscheduled tasks created on or before the end of this week (rolling forward)
+          // 3. Incomplete, unscheduled tasks created on or before the end of this week
           {
             dueDate: null,
             status: 'pending',
@@ -135,7 +139,22 @@ class TaskService {
         ];
         break;
       case 'all':
-        // For 'all' view, we don't need date constraints
+        // For 'all' view, we want to group tasks by their relevant dates
+        query.$or = [
+          // 1. All tasks with due dates
+          {
+            dueDate: { $ne: null }
+          },
+          // 2. All completed tasks
+          {
+            status: 'completed'
+          },
+          // 3. Incomplete, unscheduled tasks
+          {
+            dueDate: null,
+            status: 'pending'
+          }
+        ];
         break;
       default:
         throw new Error('Invalid view type');
@@ -241,13 +260,21 @@ class TaskService {
    */
   async updateTaskStatus(taskId, status) {
     const now = new Date();
+    const updateData = {
+      status,
+      updatedAt: now
+    };
+
+    // Set or clear completedAt based on status
+    if (status === 'completed') {
+      updateData.completedAt = now;
+    } else {
+      updateData.completedAt = null;  // Clear completedAt if task is uncompleted
+    }
+
     return this.taskModel.findByIdAndUpdate(
       taskId,
-      {
-        status,
-        updatedAt: now,
-        completedAt: status === 'completed' ? now : undefined
-      },
+      updateData,
       { new: true, runValidators: true }
     );
   }

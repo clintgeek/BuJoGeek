@@ -118,16 +118,6 @@ taskSchema.virtual('taskType').get(function() {
   return signifierMap[this.signifier] || 'task';
 });
 
-// Method to migrate task to backlog
-taskSchema.methods.migrateToBacklog = function() {
-  this.status = 'migrated_back';
-  this.signifier = '<';
-  this.isBacklog = true;
-  this.migratedFrom = new Date();
-  this.migratedTo = null;
-  return this.save();
-};
-
 // Method to migrate task to future
 taskSchema.methods.migrateToFuture = function(futureDate) {
   this.status = 'migrated_future';

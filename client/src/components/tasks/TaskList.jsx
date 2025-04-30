@@ -24,7 +24,6 @@ import {
   Delete as DeleteIcon,
   Edit as EditIcon,
   Check as CheckIcon,
-  ArrowBack as ArrowBackIcon,
   ArrowForward as ArrowForwardIcon
 } from '@mui/icons-material';
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
@@ -35,7 +34,7 @@ import { format } from 'date-fns';
 import TaskEditor from '../tasks/TaskEditor';
 
 const TaskList = ({ tasks = [], viewType = 'daily' }) => {
-  const { updateTaskStatus, deleteTask, migrateToBacklog, migrateToFuture, updateTask, filters } = useTaskStore();
+  const { updateTaskStatus, deleteTask, migrateToFuture, updateTask, filters } = useTaskStore();
   const [selectedTask, setSelectedTask] = useState(null);
   const [futureDate, setFutureDate] = useState(null);
   const [migrationDialogOpen, setMigrationDialogOpen] = useState(false);
@@ -84,6 +83,76 @@ const TaskList = ({ tasks = [], viewType = 'daily' }) => {
     };
   }, [taskArray]);
 
+  // Helper to get local date string
+  const getLocalDate = (dateString) => {
+    if (!dateString) return null;
+    try {
+      const date = new Date(dateString);
+      // Check if date is valid
+      if (isNaN(date.getTime())) {
+        return getLocalDate(new Date()); // fallback to today if invalid
+      }
+      return new Date(date.getFullYear(), date.getMonth(), date.getDate()).toISOString().split('T')[0];
+    } catch (error) {
+      console.warn('Invalid date:', dateString);
+      return getLocalDate(new Date()); // fallback to today if error
+    }
+  };
+
+  // Group tasks by date for weekly view
+  const groupWeeklyTasks = (tasks) => {
+    return tasks.reduce((acc, task) => {
+      try {
+        // Use due date if it exists, otherwise creation date
+        let dateToUse = task.dueDate ? getLocalDate(task.dueDate) : getLocalDate(task.createdAt);
+
+        // Fallback to today if needed
+        if (!dateToUse) {
+          console.warn('No valid date found for task:', task);
+          dateToUse = getLocalDate(new Date());
+        }
+
+        if (!acc[dateToUse]) {
+          acc[dateToUse] = [];
+        }
+        acc[dateToUse].push(task);
+        return acc;
+      } catch (error) {
+        console.error('Error processing task:', task, error);
+        return acc;
+      }
+    }, {});
+  };
+
+  // Group tasks by date (for non-daily views)
+  const groupTasksByDate = (tasks) => {
+    if (viewType === 'weekly') {
+      return groupWeeklyTasks(tasks);
+    }
+
+    return tasks.reduce((acc, task) => {
+      try {
+        // Use due date if it exists, otherwise creation date
+        let dateToUse = task.dueDate ? getLocalDate(task.dueDate) : getLocalDate(task.createdAt);
+
+        // Fallback to today if needed
+        if (!dateToUse) {
+          console.warn('No valid date found for task:', task);
+          dateToUse = getLocalDate(new Date());
+        }
+
+        if (!acc[dateToUse]) {
+          acc[dateToUse] = [];
+        }
+        acc[dateToUse].push(task);
+        return acc;
+      } catch (error) {
+        console.error('Error processing task:', task, error);
+        return acc;
+      }
+    }, {});
+  };
+
   // Sort tasks: pending first (scheduled, then unscheduled), completed at the bottom; within each, sort by priority (high to low), then by creation date (newest first)
   const sortTasks = (tasks) => {
     return tasks.sort((a, b) => {
@@ -107,34 +176,6 @@ const TaskList = ({ tasks = [], viewType = 'daily' }) => {
 
   const sortedTasks = sortTasks([...filteredTasks]);
 
-  // Group tasks by date (for non-daily views)
-  const groupTasksByDate = (tasks) => {
-    return tasks.reduce((acc, task) => {
-      const getLocalDate = (dateString) => {
-        if (!dateString) return null;
-        const date = new Date(dateString);
-        // Convert to local timezone date string
-        return new Date(date.getFullYear(), date.getMonth(), date.getDate()).toISOString().split('T')[0];
-      };
-
-      // For completed tasks, use the completion date (updatedAt)
-      // For scheduled tasks, use the due date
-      // For other tasks, use the creation date
-      let dateToUse;
-      if (task.status === 'completed') {
-        dateToUse = getLocalDate(task.updatedAt);
-      } else if (task.dueDate) {
-        dateToUse = getLocalDate(task.dueDate);
-      } else {
-        dateToUse = getLocalDate(task.createdAt);
-      }
-
-      if (!acc[dateToUse]) acc[dateToUse] = [];
-      acc[dateToUse].push(task);
-      return acc;
-    }, {});
-  };
-
   const handleStatusChange = async (taskId, newStatus) => {
     try {
       await updateTaskStatus(taskId, newStatus);
@@ -148,14 +189,6 @@ const TaskList = ({ tasks = [], viewType = 'daily' }) => {
       await deleteTask(taskId);
     } catch (error) {
       console.error('Error deleting task:', error);
-    }
-  };
-
-  const handleMigrateToBacklog = async (taskId) => {
-    try {
-      await migrateToBacklog(taskId);
-    } catch (error) {
-      console.error('Error migrating task to backlog:', error);
     }
   };
 
@@ -334,17 +367,6 @@ const TaskList = ({ tasks = [], viewType = 'daily' }) => {
               edge="end"
               onClick={(e) => {
                 e.stopPropagation();
-                handleMigrateToBacklog(task._id);
-              }}
-              sx={{ mr: 1 }}
-              title="Migrate to Backlog"
-            >
-              <ArrowBackIcon />
-            </IconButton>
-            <IconButton
-              edge="end"
-              onClick={(e) => {
-                e.stopPropagation();
                 handleMigrateToFuture(task._id);
               }}
               sx={{ mr: 1 }}
@@ -430,10 +452,35 @@ const TaskList = ({ tasks = [], viewType = 'daily' }) => {
   } else {
     // Group and sort tasks by date
     const tasksByDate = groupTasksByDate(filteredTasks);
-    const sortedDates = Object.keys(tasksByDate).sort((a, b) => new Date(b) - new Date(a));
+    const sortedDates = Object.keys(tasksByDate)
+      .filter(date => {
+        try {
+          // Validate each date before sorting
+          const testDate = new Date(date + 'T00:00:00');
+          return !isNaN(testDate.getTime());
+        } catch (error) {
+          console.warn('Invalid date in sorting:', date);
+          return false;
+        }
+      })
+      .sort((a, b) => {
+        try {
+          return new Date(b + 'T00:00:00') - new Date(a + 'T00:00:00');
+        } catch (error) {
+          console.warn('Error sorting dates:', a, b);
+          return 0;
+        }
+      });
+
     Object.keys(tasksByDate).forEach(date => {
-      tasksByDate[date] = sortTasks(tasksByDate[date]);
+      try {
+        tasksByDate[date] = sortTasks(tasksByDate[date]);
+      } catch (error) {
+        console.warn('Error sorting tasks for date:', date, error);
+        tasksByDate[date] = tasksByDate[date] || [];
+      }
     });
+
     return (
       <Box>
         {sortedDates.map((date) => (
@@ -451,7 +498,14 @@ const TaskList = ({ tasks = [], viewType = 'daily' }) => {
                 zIndex: 1
               }}
             >
-              {format(new Date(date + 'T00:00:00'), 'EEEE, MMMM d, yyyy')}
+              {(() => {
+                try {
+                  return format(new Date(date + 'T00:00:00'), 'EEEE, MMMM d, yyyy');
+                } catch (error) {
+                  console.warn('Error formatting date:', date);
+                  return 'Invalid Date';
+                }
+              })()}
             </Typography>
             <List>
               {tasksByDate[date].map(renderTask)}

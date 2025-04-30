@@ -106,8 +106,9 @@ const DayCell = ({ day, tasks = [], isCurrentMonth, onClick }) => {
   const theme = useTheme();
   // Count different types of tasks
   const scheduledEvents = tasks.filter(task => task.signifier === '@');
-  const highPriorityTasks = tasks.filter(task => task.priority === 1).length;
+  const highPriorityTasks = tasks.filter(task => task.priority === 1);
   const mediumPriorityTasks = tasks.filter(task => task.priority === 2).length;
+  const highPriorityEvents = highPriorityTasks.filter(task => task.signifier === '@');
 
   return (
     <Paper
@@ -152,11 +153,11 @@ const DayCell = ({ day, tasks = [], isCurrentMonth, onClick }) => {
 
         <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', ml: 'auto' }}>
           {/* Priority indicators */}
-          {highPriorityTasks > 0 && (
+          {highPriorityTasks.length > 0 && (
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
               <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: 'error.main' }} />
               <Typography variant="caption" sx={{ color: 'error.main', fontWeight: 'bold', fontSize: '0.7rem' }}>
-                {highPriorityTasks}
+                {highPriorityTasks.length}
               </Typography>
             </Box>
           )}
@@ -184,8 +185,8 @@ const DayCell = ({ day, tasks = [], isCurrentMonth, onClick }) => {
         </Box>
       </Box>
 
-      {/* Event titles */}
-      {scheduledEvents.length > 0 && (
+      {/* High Priority Event titles */}
+      {highPriorityEvents.length > 0 && (
         <Box sx={{
           display: 'flex',
           flexDirection: 'column',
@@ -193,17 +194,18 @@ const DayCell = ({ day, tasks = [], isCurrentMonth, onClick }) => {
           overflow: 'hidden',
           flex: 1
         }}>
-          {scheduledEvents.map((event, index) => (
+          {highPriorityEvents.map((event) => (
             <Typography
               key={event._id}
               variant="caption"
               noWrap
               title={event.content}
               sx={{
-                color: 'text.secondary',
+                color: 'error.main',
                 fontSize: '0.7rem',
                 lineHeight: 1.2,
-                textOverflow: 'ellipsis'
+                textOverflow: 'ellipsis',
+                fontWeight: 500
               }}
             >
               {event.content}
