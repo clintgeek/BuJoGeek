@@ -100,7 +100,7 @@ const TaskCard = ({ task, onEdit }) => {
           borderColor: 'divider',
           '&:hover': {
             bgcolor: 'action.hover'
-          }
+          },
         }}
         secondaryAction={
           <Box>

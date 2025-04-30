@@ -36,7 +36,11 @@ const TaskView = ({ viewType, date }) => {
   }
 
   return (
-    <Box>
+    <Box sx={{
+      '& .css-1bg2tgm': {
+        border: 'none !important'
+      }
+    }}>
       <TaskList tasks={tasks} viewType={viewType} />
     </Box>
   );

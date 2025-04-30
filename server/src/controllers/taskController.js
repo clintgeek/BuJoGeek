@@ -184,3 +184,22 @@ export const getAllTasks = async (req, res) => {
     handleError(res, error);
   }
 };
+
+// Migrate task to future date
+export const migrateTaskToFuture = async (req, res) => {
+  try {
+    const { futureDate } = req.body;
+    const task = await taskService.updateTask(req.params.id, {
+      dueDate: new Date(futureDate),
+      updatedAt: new Date()
+    });
+
+    if (!task) {
+      return res.status(404).json({ message: 'Task not found' });
+    }
+
+    res.json(task);
+  } catch (error) {
+    handleError(res, error);
+  }
+};

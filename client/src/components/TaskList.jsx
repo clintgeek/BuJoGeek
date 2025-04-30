@@ -25,7 +25,7 @@ import {
   ArrowBack as ArrowBackIcon,
   ArrowForward as ArrowForwardIcon
 } from '@mui/icons-material';
-import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import useTaskStore from '../store/taskStore';
@@ -337,23 +337,29 @@ const TaskList = ({ tasks = [], viewType = 'daily' }) => {
             No tasks found
           </Typography>
         )}
-        {/* Future Date Selection Dialog */}
+        {/* Future Date Dialog */}
         <Dialog open={migrationDialogOpen} onClose={() => setMigrationDialogOpen(false)}>
-          <DialogTitle>Migrate to Future Date</DialogTitle>
+          <DialogTitle>Select Future Date</DialogTitle>
           <DialogContent>
             <LocalizationProvider dateAdapter={AdapterDateFns}>
-              <DatePicker
-                label="Future Date"
+              <DateTimePicker
+                label="Future Date and Time"
                 value={futureDate}
-                onChange={(newValue) => setFutureDate(newValue)}
-                renderInput={(params) => <TextField {...params} fullWidth sx={{ mt: 2 }} />}
+                onChange={(newDate) => setFutureDate(newDate)}
+                minDate={new Date()}
+                slotProps={{
+                  textField: {
+                    fullWidth: true,
+                    margin: 'normal'
+                  }
+                }}
               />
             </LocalizationProvider>
           </DialogContent>
           <DialogActions>
             <Button onClick={() => setMigrationDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleFutureDateConfirm} variant="contained" color="primary">
-              Migrate
+            <Button onClick={handleFutureDateConfirm} color="primary" disabled={!futureDate}>
+              Confirm
             </Button>
           </DialogActions>
         </Dialog>
@@ -404,23 +410,29 @@ const TaskList = ({ tasks = [], viewType = 'daily' }) => {
             No tasks found
           </Typography>
         )}
-        {/* Future Date Selection Dialog */}
+        {/* Future Date Dialog */}
         <Dialog open={migrationDialogOpen} onClose={() => setMigrationDialogOpen(false)}>
-          <DialogTitle>Migrate to Future Date</DialogTitle>
+          <DialogTitle>Select Future Date</DialogTitle>
           <DialogContent>
             <LocalizationProvider dateAdapter={AdapterDateFns}>
-              <DatePicker
-                label="Future Date"
+              <DateTimePicker
+                label="Future Date and Time"
                 value={futureDate}
-                onChange={(newValue) => setFutureDate(newValue)}
-                renderInput={(params) => <TextField {...params} fullWidth sx={{ mt: 2 }} />}
+                onChange={(newDate) => setFutureDate(newDate)}
+                minDate={new Date()}
+                slotProps={{
+                  textField: {
+                    fullWidth: true,
+                    margin: 'normal'
+                  }
+                }}
               />
             </LocalizationProvider>
           </DialogContent>
           <DialogActions>
             <Button onClick={() => setMigrationDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleFutureDateConfirm} variant="contained" color="primary">
-              Migrate
+            <Button onClick={handleFutureDateConfirm} color="primary" disabled={!futureDate}>
+              Confirm
             </Button>
           </DialogActions>
         </Dialog>

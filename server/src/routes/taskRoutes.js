@@ -11,7 +11,8 @@ import {
   getDailyTasks,
   getWeeklyTasks,
   getMonthlyTasks,
-  getAllTasks
+  getAllTasks,
+  migrateTaskToFuture
 } from '../controllers/taskController.js';
 
 const router = express.Router();
@@ -35,5 +36,6 @@ router.put('/:id', updateTask);
 router.delete('/:id', deleteTask);
 router.patch('/:id/status', updateTaskStatus);
 router.post('/:id/subtasks', addSubtask);
+router.post('/:id/migrate-future', migrateTaskToFuture);
 
 export default router;
