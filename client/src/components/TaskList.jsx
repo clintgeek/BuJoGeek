@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   List,
   ListItem,
@@ -16,7 +16,9 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  TextField
+  TextField,
+  Chip,
+  Stack
 } from '@mui/material';
 import {
   Delete as DeleteIcon,
@@ -33,7 +35,7 @@ import { format } from 'date-fns';
 import TaskEditor from './tasks/TaskEditor';
 
 const TaskList = ({ tasks = [], viewType = 'daily' }) => {
-  const { updateTaskStatus, deleteTask, migrateToBacklog, migrateToFuture, updateTask } = useTaskStore();
+  const { updateTaskStatus, deleteTask, migrateToBacklog, migrateToFuture, updateTask, filters } = useTaskStore();
   const [selectedTask, setSelectedTask] = useState(null);
   const [futureDate, setFutureDate] = useState(null);
   const [migrationDialogOpen, setMigrationDialogOpen] = useState(false);
@@ -42,6 +44,39 @@ const TaskList = ({ tasks = [], viewType = 'daily' }) => {
 
   // Ensure tasks is an array
   const taskArray = Array.isArray(tasks) ? tasks : [];
+
+  // Filter tasks based on the filters from TaskStore
+  const filteredTasks = taskArray.filter(task => {
+    const matchesSearch = !filters.search ||
+      task.content.toLowerCase().includes(filters.search.toLowerCase()) ||
+      (task.tags && task.tags.some(tag => tag.toLowerCase().includes(filters.search.toLowerCase())));
+
+    const matchesStatus = !filters.status || task.status === filters.status;
+    const matchesPriority = !filters.priority || task.priority === Number(filters.priority);
+    const matchesType = !filters.type || task.signifier === filters.type;
+    const matchesTags = !filters.tags?.length ||
+      (task.tags && filters.tags.every(tag => task.tags.includes(tag)));
+
+    return matchesSearch && matchesStatus && matchesPriority && matchesType && matchesTags;
+  });
+
+  // Get unique tags and types from tasks
+  const { uniqueTags, uniqueTypes } = useMemo(() => {
+    const tags = new Set();
+    const types = new Set();
+    taskArray.forEach(task => {
+      if (task.tags) {
+        task.tags.forEach(tag => tags.add(tag));
+      }
+      if (task.signifier) {
+        types.add(task.signifier);
+      }
+    });
+    return {
+      uniqueTags: Array.from(tags).sort(),
+      uniqueTypes: Array.from(types).sort()
+    };
+  }, [taskArray]);
 
   // Sort tasks: pending first (scheduled, then unscheduled), completed at the bottom; within each, sort by priority (high to low), then by creation date (newest first)
   const sortTasks = (tasks) => {
@@ -64,20 +99,32 @@ const TaskList = ({ tasks = [], viewType = 'daily' }) => {
     });
   };
 
-  const sortedTasks = sortTasks([...taskArray]);
+  const sortedTasks = sortTasks([...filteredTasks]);
 
   // Group tasks by date (for non-daily views)
   const groupTasksByDate = (tasks) => {
     return tasks.reduce((acc, task) => {
       const getLocalDate = (dateString) => {
+        if (!dateString) return null;
         const date = new Date(dateString);
-        return new Date(date.getTime() + date.getTimezoneOffset() * 60000);
+        // Convert to local timezone date string
+        return new Date(date.getFullYear(), date.getMonth(), date.getDate()).toISOString().split('T')[0];
       };
-      const date = task.dueDate
-        ? getLocalDate(task.dueDate).toISOString().split('T')[0]
-        : getLocalDate(task.createdAt).toISOString().split('T')[0];
-      if (!acc[date]) acc[date] = [];
-      acc[date].push(task);
+
+      // For completed tasks, use the completion date (updatedAt)
+      // For scheduled tasks, use the due date
+      // For other tasks, use the creation date
+      let dateToUse;
+      if (task.status === 'completed') {
+        dateToUse = getLocalDate(task.updatedAt);
+      } else if (task.dueDate) {
+        dateToUse = getLocalDate(task.dueDate);
+      } else {
+        dateToUse = getLocalDate(task.createdAt);
+      }
+
+      if (!acc[dateToUse]) acc[dateToUse] = [];
+      acc[dateToUse].push(task);
       return acc;
     }, {});
   };
@@ -245,7 +292,22 @@ const TaskList = ({ tasks = [], viewType = 'daily' }) => {
             />
           )}
           <ListItemText
-            primary={task.content}
+            primary={
+              <Box component="span" sx={{ display: 'flex', alignItems: 'center' }}>
+                <Typography
+                  component="span"
+                  sx={{
+                    fontFamily: 'monospace',
+                    mr: 1,
+                    color: 'text.secondary',
+                    fontSize: '1.1rem'
+                  }}
+                >
+                  {task.signifier || '*'}
+                </Typography>
+                {task.content}
+              </Box>
+            }
             secondary={
               <Box component="span" sx={{ display: 'flex', flexDirection: 'column' }}>
                 {task.dueDate && (
@@ -376,7 +438,7 @@ const TaskList = ({ tasks = [], viewType = 'daily' }) => {
     );
   } else {
     // Group and sort tasks by date
-    const tasksByDate = groupTasksByDate(taskArray);
+    const tasksByDate = groupTasksByDate(filteredTasks);
     const sortedDates = Object.keys(tasksByDate).sort((a, b) => new Date(b) - new Date(a));
     Object.keys(tasksByDate).forEach(date => {
       tasksByDate[date] = sortTasks(tasksByDate[date]);
@@ -405,7 +467,7 @@ const TaskList = ({ tasks = [], viewType = 'daily' }) => {
             </List>
           </Box>
         ))}
-        {taskArray.length === 0 && (
+        {filteredTasks.length === 0 && (
           <Typography variant="body1" color="text.secondary" align="center" py={3}>
             No tasks found
           </Typography>

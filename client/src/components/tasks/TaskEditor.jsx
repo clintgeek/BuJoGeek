@@ -152,14 +152,15 @@ const TaskEditor = ({ open, onClose, task = null }) => {
             </FormControl>
 
             <FormControl fullWidth>
-              <InputLabel>Priority</InputLabel>
+              <InputLabel id="priority-label">Priority</InputLabel>
               <Select
-                value={formData.priority}
+                labelId="priority-label"
+                value={formData.priority ?? ''}
                 onChange={handleChange('priority')}
                 label="Priority"
               >
                 {priorityOptions.map(option => (
-                  <MenuItem key={option.value ?? 'normal'} value={option.value}>
+                  <MenuItem key={option.value ?? 'normal'} value={option.value ?? ''}>
                     {option.label}
                   </MenuItem>
                 ))}
