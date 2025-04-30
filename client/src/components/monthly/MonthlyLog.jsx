@@ -104,12 +104,10 @@ const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 const DayCell = ({ day, tasks = [], isCurrentMonth, onClick }) => {
   const theme = useTheme();
-  // Only consider scheduled tasks for indicators
-  const scheduledTasks = tasks.filter(task => task.dueDate);
-  const hasHigh = scheduledTasks.some(task => task.priority === 1);
-  const hasMedium = scheduledTasks.some(task => task.priority === 2);
-  const hasLow = scheduledTasks.some(task => task.priority === 3);
-  const hasAny = scheduledTasks.length > 0;
+  // Count different types of tasks
+  const scheduledEvents = tasks.filter(task => task.signifier === '@');
+  const highPriorityTasks = tasks.filter(task => task.priority === 1).length;
+  const mediumPriorityTasks = tasks.filter(task => task.priority === 2).length;
 
   return (
     <Paper
@@ -124,7 +122,7 @@ const DayCell = ({ day, tasks = [], isCurrentMonth, onClick }) => {
           if (isToday(day)) return theme.palette.primary[50];
           return theme.palette.background.paper;
         },
-        border: theme => isToday(day) ? `2px solid ${theme.palette.primary.main}` : '1px solid',
+        border: theme => isToday(day) ? `2px solid ${ theme.palette.primary.main }` : '1px solid',
         borderColor: 'divider',
         opacity: isCurrentMonth ? 1 : 0.5,
         transition: 'all 0.2s',
@@ -134,28 +132,85 @@ const DayCell = ({ day, tasks = [], isCurrentMonth, onClick }) => {
         },
         display: 'flex',
         flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'flex-start',
+        alignItems: 'stretch',
+        overflow: 'hidden',
       }}
     >
-      <Typography
-        variant="h6"
-        sx={{
-          fontWeight: isToday(day) ? 700 : 500,
-          color: isToday(day) ? 'primary.main' : 'text.primary',
-          fontSize: '1.1rem',
-        }}
-      >
-        {format(day, 'd')}
-      </Typography>
-      <Box sx={{ display: 'flex', gap: 0.5, mt: 0.5 }}>
-        {hasHigh && <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: 'error.main' }} />}
-        {hasMedium && <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: '#FFD700' }} />}
-        {hasLow && <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: 'info.main' }} />}
-        {!hasHigh && !hasMedium && !hasLow && hasAny && (
-          <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: 'grey.400' }} />
-        )}
+      {/* Header row with date and counts */}
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+        <Typography
+          variant="h6"
+          sx={{
+            fontWeight: isToday(day) ? 700 : 500,
+            color: isToday(day) ? 'primary.main' : 'text.primary',
+            fontSize: '1.1rem',
+            minWidth: 'auto',
+          }}
+        >
+          {format(day, 'd')}
+        </Typography>
+
+        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', ml: 'auto' }}>
+          {/* Priority indicators */}
+          {highPriorityTasks > 0 && (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: 'error.main' }} />
+              <Typography variant="caption" sx={{ color: 'error.main', fontWeight: 'bold', fontSize: '0.7rem' }}>
+                {highPriorityTasks}
+              </Typography>
+            </Box>
+          )}
+          {mediumPriorityTasks > 0 && (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: '#FFD700' }} />
+              <Typography variant="caption" sx={{ color: '#DAA520', fontWeight: 'bold', fontSize: '0.7rem' }}>
+                {mediumPriorityTasks}
+              </Typography>
+            </Box>
+          )}
+          {/* Scheduled events count */}
+          {scheduledEvents.length > 0 && (
+            <Typography
+              variant="caption"
+              sx={{
+                color: 'primary.main',
+                fontWeight: 'bold',
+                fontSize: '0.7rem'
+              }}
+            >
+              @{scheduledEvents.length}
+            </Typography>
+          )}
+        </Box>
       </Box>
+
+      {/* Event titles */}
+      {scheduledEvents.length > 0 && (
+        <Box sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 0.5,
+          overflow: 'hidden',
+          flex: 1
+        }}>
+          {scheduledEvents.map((event, index) => (
+            <Typography
+              key={event._id}
+              variant="caption"
+              noWrap
+              title={event.content}
+              sx={{
+                color: 'text.secondary',
+                fontSize: '0.7rem',
+                lineHeight: 1.2,
+                textOverflow: 'ellipsis'
+              }}
+            >
+              {event.content}
+            </Typography>
+          ))}
+        </Box>
+      )}
     </Paper>
   );
 };
@@ -182,7 +237,7 @@ const MonthlyLog = () => {
   }), [monthStart, monthEnd]);
 
   useEffect(() => {
-    const fetchKey = `${dateRange.start.toISOString()}-${dateRange.end.toISOString()}`;
+    const fetchKey = `${ dateRange.start.toISOString() }-${ dateRange.end.toISOString() }`;
 
     // Only fetch if we're not already loading and haven't fetched this range
     if (loading === LoadingState.IDLE && lastFetchRef.current !== fetchKey) {
@@ -209,9 +264,20 @@ const MonthlyLog = () => {
   };
 
   const getTasksForDay = (date) => {
+    // If tasks is an array, filter tasks for this day
+    if (Array.isArray(tasks)) {
+      return tasks.filter(task => {
+        const taskDate = task.dueDate ? new Date(task.dueDate) : null;
+        return taskDate &&
+          taskDate.getFullYear() === date.getFullYear() &&
+          taskDate.getMonth() === date.getMonth() &&
+          taskDate.getDate() === date.getDate();
+      });
+    }
+
+    // If tasks is an object indexed by date
     const dateKey = format(date, 'yyyy-MM-dd');
-    const dayTasks = tasks[dateKey] || [];
-    return dayTasks;
+    return tasks[dateKey] || [];
   };
 
   const handleDayClick = (day, dayTasks) => {
@@ -247,7 +313,7 @@ const MonthlyLog = () => {
       width: '100%'
     }}>
       {/* Month Header */}
-      <Paper
+      {/* <Paper
         elevation={0}
         sx={{
           p: 2,
@@ -300,7 +366,7 @@ const MonthlyLog = () => {
             </IconButton>
           </Stack>
         </Stack>
-      </Paper>
+      </Paper> */}
 
       {/* Calendar Grid */}
       <Paper
@@ -408,7 +474,11 @@ const MonthlyLog = () => {
           {selectedDay && format(selectedDay, 'EEEE, MMMM d, yyyy')}
         </DialogTitle>
         <DialogContent>
-          <Stack spacing={2}>
+          <Stack spacing={2} sx={{
+            '& .css-1bg2tgm': {
+              border: 'none !important'
+            }
+          }}>
             {selectedDayTasks.length > 0 ? (
               <TaskList
                 tasks={selectedDayTasks}

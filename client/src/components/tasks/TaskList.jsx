@@ -47,17 +47,23 @@ const TaskList = ({ tasks = [], viewType = 'daily' }) => {
 
   // Filter tasks based on the filters from TaskStore
   const filteredTasks = taskArray.filter(task => {
-    const matchesSearch = !filters.search ||
-      task.content.toLowerCase().includes(filters.search.toLowerCase()) ||
-      (task.tags && task.tags.some(tag => tag.toLowerCase().includes(filters.search.toLowerCase())));
+    // Only apply filters if they are explicitly set
+    if (filters.search || filters.status || filters.priority || filters.type || (filters.tags && filters.tags.length > 0)) {
+      const matchesSearch = !filters.search ||
+        task.content.toLowerCase().includes(filters.search.toLowerCase()) ||
+        (task.tags && task.tags.some(tag => tag.toLowerCase().includes(filters.search.toLowerCase())));
 
-    const matchesStatus = !filters.status || task.status === filters.status;
-    const matchesPriority = !filters.priority || task.priority === Number(filters.priority);
-    const matchesType = !filters.type || task.signifier === filters.type;
-    const matchesTags = !filters.tags?.length ||
-      (task.tags && filters.tags.every(tag => task.tags.includes(tag)));
+      const matchesStatus = !filters.status || task.status === filters.status;
+      const matchesPriority = !filters.priority || task.priority === Number(filters.priority);
+      const matchesType = !filters.type || task.signifier === filters.type;
+      const matchesTags = !filters.tags?.length ||
+        (task.tags && filters.tags.every(tag => task.tags.includes(tag)));
 
-    return matchesSearch && matchesStatus && matchesPriority && matchesType && matchesTags;
+      return matchesSearch && matchesStatus && matchesPriority && matchesType && matchesTags;
+    }
+
+    // If no filters are set, return all tasks
+    return true;
   });
 
   // Get unique tags and types from tasks
