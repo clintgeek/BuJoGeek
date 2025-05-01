@@ -36,7 +36,9 @@ const useTaskStore = create((set, get) => ({
     const { currentView, currentDate } = get();
 
     // Don't update if the view and date haven't changed
-    if (currentView === viewType && isSameYear(currentDate, date)) {
+    if (currentView === viewType &&
+        ((viewType === 'year' && isSameYear(currentDate, date)) ||
+         (viewType !== 'year' && format(currentDate, 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd')))) {
       return;
     }
 

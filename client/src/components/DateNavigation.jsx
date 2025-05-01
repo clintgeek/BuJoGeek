@@ -37,6 +37,7 @@ const DateNavigation = ({ currentDate, onDateChange }) => {
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const location = useLocation();
   const isDailyView = !location.pathname.split('/')[2] || location.pathname.split('/')[2] === 'daily';
+  const isWeeklyView = !location.pathname.split('/')[2] || location.pathname.split('/')[2] === 'weekly';
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
@@ -123,10 +124,10 @@ const DateNavigation = ({ currentDate, onDateChange }) => {
             </IconButton>
           </Box>
 
-          {isDailyView && !isMobile && <TaskFilters />}
+          {(isDailyView || isWeeklyView) && !isMobile && <TaskFilters />}
         </Stack>
 
-        {isDailyView && isMobile && <TaskFilters />}
+        {(isDailyView || isWeeklyView) && isMobile && <TaskFilters />}
       </Box>
 
       <Dialog

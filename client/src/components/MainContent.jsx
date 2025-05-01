@@ -69,14 +69,14 @@ const MainContent = () => {
               >
                 Tasks
               </Button>
-              <Button
+              {/* <Button
                 color="inherit"
                 component={Link}
                 to="/templates"
                 sx={{ mx: 1 }}
               >
                 Templates
-              </Button>
+              </Button> */}
               <Button
                 color="inherit"
                 onClick={logout}
