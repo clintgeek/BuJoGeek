@@ -29,12 +29,12 @@ import {
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import useTaskStore from '../../store/taskStore';
+import { useTaskContext } from '../../context/TaskContext';
 import { format } from 'date-fns';
 import TaskEditor from '../tasks/TaskEditor';
 
 const TaskList = ({ tasks = [], viewType = 'daily' }) => {
-  const { updateTaskStatus, deleteTask, migrateToFuture, updateTask, filters } = useTaskStore();
+  const { updateTaskStatus, deleteTask, migrateTask, updateTask, filters } = useTaskContext();
   const [selectedTask, setSelectedTask] = useState(null);
   const [futureDate, setFutureDate] = useState(null);
   const [migrationDialogOpen, setMigrationDialogOpen] = useState(false);
@@ -192,21 +192,14 @@ const TaskList = ({ tasks = [], viewType = 'daily' }) => {
     }
   };
 
-  const handleMigrateToFuture = (taskId) => {
-    setSelectedTask(taskId);
-    setMigrationDialogOpen(true);
-  };
-
-  const handleFutureDateConfirm = async () => {
-    if (selectedTask && futureDate) {
-      try {
-        await migrateToFuture(selectedTask, futureDate);
-        setMigrationDialogOpen(false);
-        setSelectedTask(null);
-        setFutureDate(null);
-      } catch (error) {
-        console.error('Error migrating task to future:', error);
-      }
+  const handleMigrateToFuture = async (taskId, date) => {
+    try {
+      await migrateTask(taskId, date);
+      setMigrationDialogOpen(false);
+      setSelectedTask(null);
+      setFutureDate(null);
+    } catch (error) {
+      console.error('Error migrating task:', error);
     }
   };
 
@@ -367,7 +360,7 @@ const TaskList = ({ tasks = [], viewType = 'daily' }) => {
               edge="end"
               onClick={(e) => {
                 e.stopPropagation();
-                handleMigrateToFuture(task._id);
+                handleMigrateToFuture(task._id, futureDate);
               }}
               sx={{ mr: 1 }}
               title="Schedule Task"
@@ -432,7 +425,7 @@ const TaskList = ({ tasks = [], viewType = 'daily' }) => {
           </DialogContent>
           <DialogActions>
             <Button onClick={() => setMigrationDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleFutureDateConfirm} color="primary" disabled={!futureDate}>
+            <Button onClick={() => handleMigrateToFuture(selectedTask, futureDate)} color="primary" disabled={!futureDate}>
               Confirm
             </Button>
           </DialogActions>
@@ -536,7 +529,7 @@ const TaskList = ({ tasks = [], viewType = 'daily' }) => {
           </DialogContent>
           <DialogActions>
             <Button onClick={() => setMigrationDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleFutureDateConfirm} color="primary" disabled={!futureDate}>
+            <Button onClick={() => handleMigrateToFuture(selectedTask, futureDate)} color="primary" disabled={!futureDate}>
               Confirm
             </Button>
           </DialogActions>

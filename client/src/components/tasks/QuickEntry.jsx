@@ -35,7 +35,7 @@ const QuickEntry = ({ open, onClose }) => {
       priority: /!(high|medium|low)/i,
       dateTime: /\/(today|tomorrow|next-week|next-month|next-(?:monday|tuesday|wednesday|thursday|friday|saturday|sunday)|(?:mon(?:day)?|tue(?:sday)?|wed(?:nesday)?|thu(?:rsday)?|fri(?:day)?|sat(?:urday)?|sun(?:day)?)|(?:\d{4}-\d{2}-\d{2})|(?:\d{2}-\d{2}-\d{4})|(?:\d{2}-\d{2})|(?:\d{1,2})(?:st|nd|rd|th)?|(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:tember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\s+\d{1,2}(?:st|nd|rd|th)?)(?:\s+(\d{1,2})(?::(\d{2}))?\s*(?:([ap]\.?m\.?))?)?/i,
       timeMarker: /\b([ap]\.?m\.?)\b/i,
-      tags: /#(\w+)/g,
+      tags: /#([a-zA-Z0-9_-]+)/g,
       type: /[*@\-!?]/,
       note: /\^(.+)$/
     };
@@ -46,6 +46,14 @@ const QuickEntry = ({ open, onClose }) => {
     let type = null;
     let note = null;
     const tags = [];
+
+    // Extract tags first, before any other processing
+    let tagMatch;
+    while ((tagMatch = patterns.tags.exec(content)) !== null) {
+      tags.push(tagMatch[1]);
+    }
+    // Remove all tags from content
+    content = content.replace(/#[a-zA-Z0-9_-]+/g, '').trim();
 
     // Extract note (should be done first since it's at the end)
     const noteMatch = content.match(patterns.note);
@@ -59,6 +67,9 @@ const QuickEntry = ({ open, onClose }) => {
     if (typeMatch) {
       type = typeMatch[0];
       content = content.replace(typeMatch[0], '').trim();
+    } else {
+      // Set default signifier if none is provided
+      type = '*';  // Default to task signifier
     }
 
     // Extract priority
@@ -207,13 +218,6 @@ const QuickEntry = ({ open, onClose }) => {
 
       dueDate = date;
       content = content.replace(fullMatch, '').trim();
-    }
-
-    // Extract tags
-    let tagMatch;
-    while ((tagMatch = patterns.tags.exec(content)) !== null) {
-      tags.push(tagMatch[1]);
-      content = content.replace(tagMatch[0], '').trim();
     }
 
     const newSuggestions = [];

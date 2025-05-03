@@ -1,13 +1,13 @@
 import React from 'react';
 import { Box, FormControl, InputLabel, Select, MenuItem, Checkbox, ListItemText, useTheme } from '@mui/material';
-import useTaskStore from '../../store/taskStore';
+import { useTaskContext } from '../../context/TaskContext';
 
 const TaskFilters = () => {
-  const { filters, setFilters, tasks } = useTaskStore();
+  const { filters, updateFilters, tasks } = useTaskContext();
   const theme = useTheme();
 
   const handleFilterChange = (field, value) => {
-    setFilters({ ...filters, [field]: value });
+    updateFilters({ ...filters, [field]: value });
   };
 
   // Get all unique tags from tasks

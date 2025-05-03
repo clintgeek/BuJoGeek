@@ -1,18 +1,21 @@
 import React, { useEffect } from 'react';
 import { Box, CircularProgress, Typography } from '@mui/material';
-import useTaskStore from '../../store/taskStore';
+import { useTaskContext } from '../../context/TaskContext';
 import TaskList from './TaskList';
 import MonthlyLog from '../monthly/MonthlyLog';
 import YearlyLog from '../yearly/YearlyLog';
 
 const TaskView = ({ viewType, date }) => {
-  const { tasks, loading, error, setView } = useTaskStore();
+  const { tasks, loading, error, fetchTasks, LoadingState } = useTaskContext();
 
   useEffect(() => {
-    setView(viewType, date);
-  }, [viewType, date, setView]);
+    console.log('TaskView: Fetching tasks for', { viewType, date });
+    fetchTasks(viewType, date);
+  }, [viewType, date, fetchTasks]);
 
-  if (loading) {
+  console.log('TaskView render:', { loading, error, tasksCount: tasks?.length });
+
+  if (loading === LoadingState.FETCHING) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
         <CircularProgress />

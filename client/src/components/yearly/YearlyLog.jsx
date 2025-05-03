@@ -19,14 +19,14 @@ import {
   isThisMonth,
   isSameYear
 } from 'date-fns';
-import useTaskStore from '../../store/taskStore';
+import { useTaskContext } from '../../context/TaskContext';
 import TaskList from '../tasks/TaskList';
 
 const YearlyLog = ({ date = new Date() }) => {
   const [selectedYear, setSelectedYear] = useState(startOfYear(date));
   const [selectedMonth, setSelectedMonth] = useState(null);
   const [selectedMonthTasks, setSelectedMonthTasks] = useState([]);
-  const { tasks, setView, currentView, currentDate } = useTaskStore();
+  const { tasks, fetchYearlyTasks, currentView, currentDate } = useTaskContext();
 
   const yearStart = startOfYear(selectedYear);
   const yearEnd = endOfYear(selectedYear);
@@ -34,9 +34,9 @@ const YearlyLog = ({ date = new Date() }) => {
 
   useEffect(() => {
     if (!isSameYear(currentDate, selectedYear) || currentView !== 'year') {
-      setView('year', selectedYear);
+      fetchYearlyTasks(selectedYear);
     }
-  }, [selectedYear, currentView, currentDate, setView]);
+  }, [selectedYear, currentView, currentDate, fetchYearlyTasks]);
 
   const getTasksForMonth = (date) => {
     if (!tasks || (!Array.isArray(tasks) && !Object.values(tasks).length)) {

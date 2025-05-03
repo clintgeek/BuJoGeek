@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useCallback, useRef, useEffect } from 'react';
 import axios from 'axios';
-import { format } from 'date-fns';
+import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from 'date-fns';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
 
@@ -37,10 +37,12 @@ export const useTaskContext = () => {
 const TaskProvider = ({ children }) => {
   // Main state
   const [tasks, setTasks] = useState([]);
-  const [loading, setLoading] = useState(LoadingState.IDLE);
+  const [loading, setLoading] = useState('IDLE');
   const [error, setError] = useState(null);
   const fetchTimeoutRef = useRef(null);
   const lastFetchRef = useRef(null);
+  const [currentView, setCurrentView] = useState('daily');
+  const [currentDate, setCurrentDate] = useState(new Date());
 
   // Filter state
   const [filters, setFilters] = useState({
@@ -192,21 +194,63 @@ const TaskProvider = ({ children }) => {
   }, []);
 
   // Task fetching
-  const fetchTasks = useCallback(async (params = {}) => {
+  const fetchTasks = useCallback(async (viewType, date) => {
+    console.log('Fetching tasks for:', { viewType, date });
+    setLoading(LoadingState.FETCHING);
+    setError(null);
     try {
-      setLoading(LoadingState.FETCHING);
-      setError(null);
-      const response = await axios.get(`${API_URL}/tasks`, {
-        params: { ...filters, ...params },
+      let endpoint = '/tasks';
+      let params = {};
+
+      switch (viewType) {
+        case 'daily':
+          endpoint = '/tasks/daily';
+          params = { date: format(date || new Date(), 'yyyy-MM-dd') };
+          break;
+        case 'weekly':
+          const startDate = startOfWeek(date || new Date());
+          const endDate = endOfWeek(date || new Date());
+          endpoint = '/tasks/weekly';
+          params = {
+            startDate: format(startDate, 'yyyy-MM-dd'),
+            endDate: format(endDate, 'yyyy-MM-dd')
+          };
+          break;
+        case 'monthly':
+          const monthStart = startOfMonth(date || new Date());
+          const monthEnd = endOfMonth(date || new Date());
+          endpoint = '/tasks/monthly';
+          params = {
+            startDate: format(monthStart, 'yyyy-MM-dd'),
+            endDate: format(monthEnd, 'yyyy-MM-dd')
+          };
+          break;
+        case 'year':
+          endpoint = '/tasks/yearly';
+          params = { year: (date || new Date()).getFullYear() };
+          break;
+        default:
+          endpoint = '/tasks';
+          params = { viewType, date: date ? format(date, 'yyyy-MM-dd') : undefined };
+      }
+
+      console.log('Making request to:', endpoint, 'with params:', params);
+      const response = await axios.get(`${API_URL}${endpoint}`, {
+        params,
         headers: getAuthHeaders()
       });
+      console.log('Tasks fetched successfully:', response.data);
       setTasks(response.data);
-    } catch (error) {
-      handleApiError(error);
+      setCurrentView(viewType);
+      setCurrentDate(date || new Date());
+    } catch (err) {
+      console.error('Error fetching tasks:', err);
+      setError(err.response?.data?.message || 'Failed to fetch tasks');
     } finally {
+      console.log('Setting loading to IDLE');
       setLoading(LoadingState.IDLE);
     }
-  }, [filters, getAuthHeaders, handleApiError]);
+  }, [getAuthHeaders]);
 
   const fetchAllTasks = useCallback(async () => {
     // Skip if already fetching
@@ -299,58 +343,27 @@ const TaskProvider = ({ children }) => {
 
   // Task operations
   const createTask = useCallback(async (taskData) => {
+    console.log('Creating task with data:', taskData);
+    setLoading('CREATING');
+    setError(null);
     try {
-      setLoading(LoadingState.CREATING);
       const response = await axios.post(`${API_URL}/tasks`, taskData, {
         headers: getAuthHeaders()
       });
-      const newTask = response.data;
-
+      console.log('Task created successfully:', response.data);
       setTasks(prevTasks => {
-        // Handle array format (daily view)
-        if (Array.isArray(prevTasks)) {
-          return [...prevTasks, newTask].sort((a, b) => {
-            // Sort by priority first
-            const priorityOrder = { high: 0, medium: 1, low: 2, none: 3 };
-            const priorityDiff = priorityOrder[a.priority] - priorityOrder[b.priority];
-            if (priorityDiff !== 0) return priorityDiff;
-
-            // Then sort by due date
-            const aDate = a.dueDate ? new Date(a.dueDate) : new Date(9999, 11, 31);
-            const bDate = b.dueDate ? new Date(b.dueDate) : new Date(9999, 11, 31);
-            return aDate - bDate;
-          });
-        }
-
-        // Handle object format (all/other views)
-        const dateKey = newTask.dueDate ?
-          new Date(newTask.dueDate).toISOString().split('T')[0] :
-          'no-date';
-
-        return {
-          ...prevTasks,
-          [dateKey]: [
-            ...(prevTasks[dateKey] || []),
-            newTask
-          ].sort((a, b) => {
-            const priorityOrder = { high: 0, medium: 1, low: 2, none: 3 };
-            const priorityDiff = priorityOrder[a.priority] - priorityOrder[b.priority];
-            if (priorityDiff !== 0) return priorityDiff;
-
-            const aDate = a.dueDate ? new Date(a.dueDate) : new Date(9999, 11, 31);
-            const bDate = b.dueDate ? new Date(b.dueDate) : new Date(9999, 11, 31);
-            return aDate - bDate;
-          })
-        };
+        const newTasks = Array.isArray(prevTasks) ? [...prevTasks, response.data] : [response.data];
+        console.log('Updated tasks array:', newTasks);
+        return newTasks;
       });
-
-      setLoading(LoadingState.IDLE);
-      return newTask;
+      return response.data;
     } catch (err) {
       console.error('Error creating task:', err);
-      setError(err.message);
-      setLoading(LoadingState.ERROR);
+      setError(err.response?.data?.message || 'Failed to create task');
       throw err;
+    } finally {
+      console.log('Setting loading to IDLE after task creation');
+      setLoading('IDLE');
     }
   }, [getAuthHeaders]);
 
@@ -430,7 +443,7 @@ const TaskProvider = ({ children }) => {
       return updatedTask;
     } catch (err) {
       console.error('Error updating task:', err);
-      setError(err.message);
+      setError(err.response?.data?.message || 'Failed to update task');
       setLoading(LoadingState.ERROR);
       throw err;
     }
@@ -633,6 +646,8 @@ const TaskProvider = ({ children }) => {
     loading,
     error,
     filters,
+    currentView,
+    currentDate,
 
     // Filter management
     updateFilters,
