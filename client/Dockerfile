@@ -69,7 +69,11 @@ RUN mkdir -p /usr/share/nginx/html && \
     chown -R nginx:nginx /usr/share/nginx/html && \
     chmod -R 755 /usr/share/nginx/html
 
-# Copy the build output
+# Copy the build output with verbose logging
+RUN echo "=== Copying build output ===" > /tmp/copy.log && \
+    echo "Source: /app/dist/" >> /tmp/copy.log && \
+    echo "Destination: /usr/share/nginx/html/" >> /tmp/copy.log
+
 COPY --from=build /app/dist/ /usr/share/nginx/html/
 
 # Debug: List contents in nginx
