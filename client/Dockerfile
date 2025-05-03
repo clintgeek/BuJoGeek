@@ -1,5 +1,8 @@
 FROM node:18-alpine as build
 
+# Install bash and other useful tools
+RUN apk add --no-cache bash curl
+
 WORKDIR /app
 
 # Copy package files and install dependencies
@@ -15,7 +18,7 @@ ENV BACKEND_PORT=$BACKEND_PORT
 ENV NODE_ENV=production
 
 # Debug: List contents before build
-RUN sh -c 'echo "=== Contents before build ==="; \
+RUN bash -c 'echo "=== Contents before build ==="; \
     echo "Current directory: $(pwd)"; \
     echo "Directory contents:"; \
     ls -la'
@@ -24,7 +27,7 @@ RUN sh -c 'echo "=== Contents before build ==="; \
 RUN npm run build --verbose || (echo "Build failed" && exit 1)
 
 # Debug: List contents after build
-RUN sh -c 'echo "=== Contents after build ==="; \
+RUN bash -c 'echo "=== Contents after build ==="; \
     echo "Current directory: $(pwd)"; \
     echo "Directory contents:"; \
     ls -la; \
@@ -39,6 +42,9 @@ RUN sh -c 'echo "=== Contents after build ==="; \
 # Production stage
 FROM nginx:alpine
 
+# Install bash and other useful tools
+RUN apk add --no-cache bash curl
+
 # Create the web root directory
 RUN mkdir -p /usr/share/nginx/html
 
@@ -46,7 +52,7 @@ RUN mkdir -p /usr/share/nginx/html
 COPY --from=build /app/dist/ /usr/share/nginx/html/
 
 # Debug: List contents in nginx
-RUN sh -c 'echo "=== Contents in nginx web root ==="; \
+RUN bash -c 'echo "=== Contents in nginx web root ==="; \
     echo "Current directory: $(pwd)"; \
     echo "Directory contents:"; \
     ls -la /usr/share/nginx/html; \
@@ -62,6 +68,9 @@ RUN sh -c 'echo "=== Contents in nginx web root ==="; \
 
 # Copy nginx configuration
 COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+# Set bash as the default shell
+SHELL ["/bin/bash", "-c"]
 
 # Expose port
 EXPOSE 80
