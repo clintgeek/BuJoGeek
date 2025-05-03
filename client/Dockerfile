@@ -1,7 +1,7 @@
 FROM node:18-alpine as build
 
-# Install bash and other useful tools
-RUN apk add --no-cache bash curl
+# Install curl for debugging
+RUN apk add --no-cache curl
 
 WORKDIR /app
 
@@ -18,7 +18,7 @@ ENV BACKEND_PORT=$BACKEND_PORT
 ENV NODE_ENV=production
 
 # Debug: List contents before build
-RUN bash -c 'echo "=== Contents before build ===" > /tmp/pre_build.log; \
+RUN sh -c 'echo "=== Contents before build ===" > /tmp/pre_build.log; \
     echo "Current directory: $(pwd)" >> /tmp/pre_build.log; \
     echo "Directory contents:" >> /tmp/pre_build.log; \
     ls -la >> /tmp/pre_build.log; \
@@ -28,7 +28,7 @@ RUN bash -c 'echo "=== Contents before build ===" > /tmp/pre_build.log; \
 RUN npm run build --verbose > /tmp/build.log 2>&1 || (echo "Build failed" && cat /tmp/build.log && exit 1)
 
 # Debug: List contents after build
-RUN bash -c 'echo "=== Contents after build ===" > /tmp/post_build.log; \
+RUN sh -c 'echo "=== Contents after build ===" > /tmp/post_build.log; \
     echo "Current directory: $(pwd)" >> /tmp/post_build.log; \
     echo "Directory contents:" >> /tmp/post_build.log; \
     ls -la >> /tmp/post_build.log; \
@@ -44,9 +44,8 @@ RUN bash -c 'echo "=== Contents after build ===" > /tmp/post_build.log; \
 # Production stage
 FROM nginx:alpine
 
-# Install bash and other useful tools
-RUN apk add --no-cache bash curl && \
-    ln -sf /bin/bash /bin/sh
+# Install curl for debugging
+RUN apk add --no-cache curl
 
 # Create log directories
 RUN mkdir -p /var/log/nginx && \
@@ -63,7 +62,7 @@ RUN mkdir -p /usr/share/nginx/html
 COPY --from=build /app/dist/ /usr/share/nginx/html/
 
 # Debug: List contents in nginx
-RUN bash -c 'echo "=== Contents in nginx web root ===" > /tmp/nginx_setup.log; \
+RUN sh -c 'echo "=== Contents in nginx web root ===" > /tmp/nginx_setup.log; \
     echo "Current directory: $(pwd)" >> /tmp/nginx_setup.log; \
     echo "Directory contents:" >> /tmp/nginx_setup.log; \
     ls -la /usr/share/nginx/html >> /tmp/nginx_setup.log; \
@@ -80,9 +79,6 @@ RUN bash -c 'echo "=== Contents in nginx web root ===" > /tmp/nginx_setup.log; \
 
 # Copy nginx configuration
 COPY nginx.conf /etc/nginx/conf.d/default.conf
-
-# Set bash as the default shell
-SHELL ["/bin/bash", "-c"]
 
 # Expose port
 EXPOSE 80
