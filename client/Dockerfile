@@ -89,7 +89,7 @@ RUN sh -c 'echo "=== Contents in nginx web root ===" > /tmp/nginx_setup.log; \
     cat /tmp/nginx_setup.log'
 
 # Copy nginx configuration
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY nginx.conf /etc/nginx/nginx.conf
 
 # Expose port
 EXPOSE 80
