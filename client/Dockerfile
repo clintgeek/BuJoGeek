@@ -7,7 +7,7 @@ WORKDIR /app
 
 # Copy package files and install dependencies
 COPY package*.json ./
-RUN npm install
+RUN npm install --verbose > /tmp/npm_install.log 2>&1 || (echo "npm install failed" && cat /tmp/npm_install.log && exit 1)
 
 # Copy application code
 COPY . .
@@ -18,32 +18,42 @@ ENV BACKEND_PORT=$BACKEND_PORT
 ENV NODE_ENV=production
 
 # Debug: List contents before build
-RUN bash -c 'echo "=== Contents before build ==="; \
-    echo "Current directory: $(pwd)"; \
-    echo "Directory contents:"; \
-    ls -la'
+RUN bash -c 'echo "=== Contents before build ===" > /tmp/pre_build.log; \
+    echo "Current directory: $(pwd)" >> /tmp/pre_build.log; \
+    echo "Directory contents:" >> /tmp/pre_build.log; \
+    ls -la >> /tmp/pre_build.log; \
+    cat /tmp/pre_build.log'
 
 # Build the application with verbose output
-RUN npm run build --verbose || (echo "Build failed" && exit 1)
+RUN npm run build --verbose > /tmp/build.log 2>&1 || (echo "Build failed" && cat /tmp/build.log && exit 1)
 
 # Debug: List contents after build
-RUN bash -c 'echo "=== Contents after build ==="; \
-    echo "Current directory: $(pwd)"; \
-    echo "Directory contents:"; \
-    ls -la; \
-    echo "=== Contents of dist directory ==="; \
+RUN bash -c 'echo "=== Contents after build ===" > /tmp/post_build.log; \
+    echo "Current directory: $(pwd)" >> /tmp/post_build.log; \
+    echo "Directory contents:" >> /tmp/post_build.log; \
+    ls -la >> /tmp/post_build.log; \
+    echo "=== Contents of dist directory ===" >> /tmp/post_build.log; \
     if [ -d "dist" ]; then \
-        ls -la dist/; \
+        ls -la dist/ >> /tmp/post_build.log; \
     else \
-        echo "dist directory not found"; \
+        echo "dist directory not found" >> /tmp/post_build.log; \
         exit 1; \
-    fi'
+    fi; \
+    cat /tmp/post_build.log'
 
 # Production stage
 FROM nginx:alpine
 
 # Install bash and other useful tools
 RUN apk add --no-cache bash curl
+
+# Create log directories
+RUN mkdir -p /var/log/nginx && \
+    chown -R nginx:nginx /var/log/nginx && \
+    chmod -R 755 /var/log/nginx
+
+# Copy build logs from build stage
+COPY --from=build /tmp/*.log /tmp/
 
 # Create the web root directory
 RUN mkdir -p /usr/share/nginx/html
@@ -52,19 +62,20 @@ RUN mkdir -p /usr/share/nginx/html
 COPY --from=build /app/dist/ /usr/share/nginx/html/
 
 # Debug: List contents in nginx
-RUN bash -c 'echo "=== Contents in nginx web root ==="; \
-    echo "Current directory: $(pwd)"; \
-    echo "Directory contents:"; \
-    ls -la /usr/share/nginx/html; \
-    echo "=== Checking for index.html ==="; \
+RUN bash -c 'echo "=== Contents in nginx web root ===" > /tmp/nginx_setup.log; \
+    echo "Current directory: $(pwd)" >> /tmp/nginx_setup.log; \
+    echo "Directory contents:" >> /tmp/nginx_setup.log; \
+    ls -la /usr/share/nginx/html >> /tmp/nginx_setup.log; \
+    echo "=== Checking for index.html ===" >> /tmp/nginx_setup.log; \
     if [ -f "/usr/share/nginx/html/index.html" ]; then \
-        echo "index.html exists"; \
-        echo "index.html contents:"; \
-        cat /usr/share/nginx/html/index.html; \
+        echo "index.html exists" >> /tmp/nginx_setup.log; \
+        echo "index.html contents:" >> /tmp/nginx_setup.log; \
+        cat /usr/share/nginx/html/index.html >> /tmp/nginx_setup.log; \
     else \
-        echo "index.html is missing"; \
+        echo "index.html is missing" >> /tmp/nginx_setup.log; \
         exit 1; \
-    fi'
+    fi; \
+    cat /tmp/nginx_setup.log'
 
 # Copy nginx configuration
 COPY nginx.conf /etc/nginx/conf.d/default.conf
@@ -75,5 +86,5 @@ SHELL ["/bin/bash", "-c"]
 # Expose port
 EXPOSE 80
 
-# Start Nginx
+# Start Nginx with logging enabled
 CMD ["nginx", "-g", "daemon off;"]
