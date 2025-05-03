@@ -1,5 +1,5 @@
 import { Box, AppBar, Toolbar, Typography, Button, Container, IconButton } from '@mui/material';
-import { Link, Routes, Route } from 'react-router-dom';
+import { Link, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import LoginPage from '../pages/LoginPage';
 import RegisterPage from '../pages/RegisterPage';
@@ -123,33 +123,37 @@ const MainContent = () => {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/" element={
-            <Box sx={{
-              textAlign: 'center',
-              mt: { xs: 4, sm: 8 }
-            }}>
-              <Typography
-                variant="h2"
-                component="h1"
-                gutterBottom
-                sx={{
-                  fontFamily: '"Roboto Mono", monospace',
-                  fontWeight: 700
-                }}
-              >
-                BuJoGeek
-              </Typography>
-              <Typography
-                variant="h5"
-                component="h2"
-                gutterBottom
-                color="text.secondary"
-              >
-                Digital Bullet Journal
-              </Typography>
-              <Typography variant="body1" color="text.secondary">
-                Part of GeekSuite
-              </Typography>
-            </Box>
+            user ? (
+              <Box sx={{
+                textAlign: 'center',
+                mt: { xs: 4, sm: 8 }
+              }}>
+                <Typography
+                  variant="h2"
+                  component="h1"
+                  gutterBottom
+                  sx={{
+                    fontFamily: '"Roboto Mono", monospace',
+                    fontWeight: 700
+                  }}
+                >
+                  BuJoGeek
+                </Typography>
+                <Typography
+                  variant="h5"
+                  component="h2"
+                  gutterBottom
+                  color="text.secondary"
+                >
+                  Digital Bullet Journal
+                </Typography>
+                <Typography variant="body1" color="text.secondary">
+                  Part of GeekSuite
+                </Typography>
+              </Box>
+            ) : (
+              <Navigate to="/login" replace />
+            )
           } />
           <Route path="/tasks/*" element={
             <ProtectedRoute>
