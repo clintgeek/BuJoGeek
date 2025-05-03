@@ -45,7 +45,8 @@ RUN bash -c 'echo "=== Contents after build ===" > /tmp/post_build.log; \
 FROM nginx:alpine
 
 # Install bash and other useful tools
-RUN apk add --no-cache bash curl
+RUN apk add --no-cache bash curl && \
+    ln -sf /bin/bash /bin/sh
 
 # Create log directories
 RUN mkdir -p /var/log/nginx && \
