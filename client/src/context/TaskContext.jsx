@@ -146,7 +146,6 @@ const TaskProvider = ({ children }) => {
 
     // Skip if already fetching this range
     if (loading === LoadingState.FETCHING && lastFetchRef.current === key) {
-      console.log('Already fetching this range, skipping');
       return;
     }
 
@@ -195,7 +194,6 @@ const TaskProvider = ({ children }) => {
 
   // Task fetching
   const fetchTasks = useCallback(async (viewType, date) => {
-    console.log('Fetching tasks for:', { viewType, date });
     setLoading(LoadingState.FETCHING);
     setError(null);
     try {
@@ -234,20 +232,16 @@ const TaskProvider = ({ children }) => {
           params = { viewType, date: date ? format(date, 'yyyy-MM-dd') : undefined };
       }
 
-      console.log('Making request to:', endpoint, 'with params:', params);
       const response = await axios.get(`${API_URL}${endpoint}`, {
         params,
         headers: getAuthHeaders()
       });
-      console.log('Tasks fetched successfully:', response.data);
       setTasks(response.data);
       setCurrentView(viewType);
       setCurrentDate(date || new Date());
     } catch (err) {
       console.error('Error fetching tasks:', err);
       setError(err.response?.data?.message || 'Failed to fetch tasks');
-    } finally {
-      console.log('Setting loading to IDLE');
       setLoading(LoadingState.IDLE);
     }
   }, [getAuthHeaders]);
@@ -255,7 +249,6 @@ const TaskProvider = ({ children }) => {
   const fetchAllTasks = useCallback(async () => {
     // Skip if already fetching
     if (loading === LoadingState.FETCHING) {
-      console.log('Already fetching all tasks, skipping');
       return;
     }
 
@@ -273,7 +266,6 @@ const TaskProvider = ({ children }) => {
 
       // Check if this is still the most recent request
       if (lastFetchRef.current !== requestId) {
-        console.log('Newer request in progress, discarding results');
         return;
       }
 
