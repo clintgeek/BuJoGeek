@@ -16,12 +16,15 @@ COPY . .
 ARG BACKEND_PORT=5000
 ENV BACKEND_PORT=$BACKEND_PORT
 ENV NODE_ENV=production
+ENV VITE_BASE_URL=/client/dist/
 
 # Debug: List contents before build
 RUN sh -c 'echo "=== Contents before build ===" > /tmp/pre_build.log; \
     echo "Current directory: $(pwd)" >> /tmp/pre_build.log; \
     echo "Directory contents:" >> /tmp/pre_build.log; \
     ls -la >> /tmp/pre_build.log; \
+    echo "Environment variables:" >> /tmp/pre_build.log; \
+    env >> /tmp/pre_build.log; \
     cat /tmp/pre_build.log'
 
 # Build the application with verbose output
@@ -35,6 +38,12 @@ RUN sh -c 'echo "=== Contents after build ===" > /tmp/post_build.log; \
     echo "=== Contents of dist directory ===" >> /tmp/post_build.log; \
     if [ -d "dist" ]; then \
         ls -la dist/ >> /tmp/post_build.log; \
+        echo "=== Contents of index.html ===" >> /tmp/post_build.log; \
+        if [ -f "dist/index.html" ]; then \
+            cat dist/index.html >> /tmp/post_build.log; \
+        else \
+            echo "index.html not found in dist directory" >> /tmp/post_build.log; \
+        fi; \
     else \
         echo "dist directory not found" >> /tmp/post_build.log; \
         exit 1; \
