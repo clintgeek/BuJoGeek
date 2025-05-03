@@ -9,6 +9,11 @@ RUN npm install
 # Copy application code
 COPY . .
 
+# Set build arguments
+ARG BACKEND_PORT=5000
+ENV BACKEND_PORT=$BACKEND_PORT
+ENV NODE_ENV=production
+
 # Build the application
 RUN npm run build
 
