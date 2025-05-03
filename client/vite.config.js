@@ -25,6 +25,7 @@ export default defineConfig(({ command, mode }) => {
       assetsDir: 'assets',
       emptyOutDir: true,
       sourcemap: !isProduction,
+      base: isProduction ? '/' : '/',
     },
     resolve: {
       extensions: ['.js', '.jsx', '.json'],

@@ -55,8 +55,10 @@ RUN mkdir -p /var/log/nginx && \
 # Copy build logs from build stage
 COPY --from=build /tmp/*.log /tmp/
 
-# Create the web root directory
-RUN mkdir -p /usr/share/nginx/html
+# Create the web root directory and ensure proper permissions
+RUN mkdir -p /usr/share/nginx/html && \
+    chown -R nginx:nginx /usr/share/nginx/html && \
+    chmod -R 755 /usr/share/nginx/html
 
 # Copy the build output
 COPY --from=build /app/dist/ /usr/share/nginx/html/
