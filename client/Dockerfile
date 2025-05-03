@@ -15,15 +15,20 @@ ENV BACKEND_PORT=$BACKEND_PORT
 ENV NODE_ENV=production
 
 # Debug: List contents before build
-RUN echo "=== Contents before build ===" && ls -la
+RUN echo "=== Contents before build ===" && \
+    pwd && \
+    ls -la
 
 # Build the application with verbose output
 RUN npm run build --verbose || (echo "Build failed" && exit 1)
 
 # Debug: List contents after build
 RUN echo "=== Contents after build ===" && \
-    echo "=== Contents of /app ===" && ls -la && \
-    echo "=== Contents of /app/dist ===" && ls -la dist/ || (echo "dist directory not found" && exit 1)
+    echo "=== Contents of /app ===" && \
+    pwd && \
+    ls -la && \
+    echo "=== Contents of /app/dist ===" && \
+    ls -la dist/ || (echo "dist directory not found" && exit 1)
 
 # Production stage
 FROM nginx:alpine
@@ -36,7 +41,11 @@ COPY --from=build /app/dist/ /usr/share/nginx/html/
 
 # Debug: List contents in nginx
 RUN echo "=== Contents in nginx web root ===" && \
-    echo "=== Contents of /usr/share/nginx/html ===" && ls -la /usr/share/nginx/html
+    echo "=== Contents of /usr/share/nginx/html ===" && \
+    pwd && \
+    ls -la /usr/share/nginx/html && \
+    echo "=== Checking for index.html ===" && \
+    test -f /usr/share/nginx/html/index.html && echo "index.html exists" || echo "index.html missing"
 
 # Copy nginx configuration
 COPY nginx.conf /etc/nginx/conf.d/default.conf
