@@ -9,11 +9,8 @@ const TaskView = ({ viewType, date }) => {
   const { tasks, loading, error, fetchTasks, LoadingState } = useTaskContext();
 
   useEffect(() => {
-    console.log('TaskView: Fetching tasks for', { viewType, date });
     fetchTasks(viewType, date);
   }, [viewType, date, fetchTasks]);
-
-  console.log('TaskView render:', { loading, error, tasksCount: tasks?.length });
 
   if (loading === LoadingState.FETCHING) {
     return (
