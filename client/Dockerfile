@@ -15,19 +15,26 @@ ENV BACKEND_PORT=$BACKEND_PORT
 ENV NODE_ENV=production
 
 # Debug: List contents before build
-RUN echo "\n=== Contents before build ===" && \
-    echo "Current directory:" && pwd && \
-    echo "\nDirectory contents:" && ls -la
+RUN sh -c 'echo "=== Contents before build ==="; \
+    echo "Current directory: $(pwd)"; \
+    echo "Directory contents:"; \
+    ls -la'
 
 # Build the application with verbose output
 RUN npm run build --verbose || (echo "Build failed" && exit 1)
 
 # Debug: List contents after build
-RUN echo "\n=== Contents after build ===" && \
-    echo "Current directory:" && pwd && \
-    echo "\nDirectory contents:" && ls -la && \
-    echo "\n=== Contents of dist directory ===" && \
-    ls -la dist/ || (echo "dist directory not found" && exit 1)
+RUN sh -c 'echo "=== Contents after build ==="; \
+    echo "Current directory: $(pwd)"; \
+    echo "Directory contents:"; \
+    ls -la; \
+    echo "=== Contents of dist directory ==="; \
+    if [ -d "dist" ]; then \
+        ls -la dist/; \
+    else \
+        echo "dist directory not found"; \
+        exit 1; \
+    fi'
 
 # Production stage
 FROM nginx:alpine
@@ -39,17 +46,19 @@ RUN mkdir -p /usr/share/nginx/html
 COPY --from=build /app/dist/ /usr/share/nginx/html/
 
 # Debug: List contents in nginx
-RUN echo "\n=== Contents in nginx web root ===" && \
-    echo "Current directory:" && pwd && \
-    echo "\nDirectory contents:" && ls -la /usr/share/nginx/html && \
-    echo "\n=== Checking for index.html ===" && \
-    if [ -f /usr/share/nginx/html/index.html ]; then \
-        echo "index.html exists" && \
-        echo "index.html contents:" && \
+RUN sh -c 'echo "=== Contents in nginx web root ==="; \
+    echo "Current directory: $(pwd)"; \
+    echo "Directory contents:"; \
+    ls -la /usr/share/nginx/html; \
+    echo "=== Checking for index.html ==="; \
+    if [ -f "/usr/share/nginx/html/index.html" ]; then \
+        echo "index.html exists"; \
+        echo "index.html contents:"; \
         cat /usr/share/nginx/html/index.html; \
     else \
         echo "index.html is missing"; \
-    fi
+        exit 1; \
+    fi'
 
 # Copy nginx configuration
 COPY nginx.conf /etc/nginx/conf.d/default.conf
