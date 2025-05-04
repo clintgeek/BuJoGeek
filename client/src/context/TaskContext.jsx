@@ -239,6 +239,7 @@ const TaskProvider = ({ children }) => {
       setTasks(response.data);
       setCurrentView(viewType);
       setCurrentDate(date || new Date());
+      setLoading(LoadingState.IDLE);
     } catch (err) {
       console.error('Error fetching tasks:', err);
       setError(err.response?.data?.message || 'Failed to fetch tasks');
