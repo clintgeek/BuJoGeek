@@ -30,11 +30,12 @@ import {
 import { StaticDatePicker } from '@mui/x-date-pickers/StaticDatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import TaskFilters from './tasks/TaskFilters';
+import TaskFilters, { FiltersButton } from './tasks/TaskFilters';
 import { useLocation } from 'react-router-dom';
 
 const DateNavigation = ({ currentDate, onDateChange }) => {
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const [filtersDrawerOpen, setFiltersDrawerOpen] = useState(false);
   const location = useLocation();
   const isDailyView = !location.pathname.split('/')[2] || location.pathname.split('/')[2] === 'daily';
   const isWeeklyView = !location.pathname.split('/')[2] || location.pathname.split('/')[2] === 'weekly';
@@ -122,12 +123,14 @@ const DateNavigation = ({ currentDate, onDateChange }) => {
             <IconButton onClick={handleNext}>
               <ChevronRightIcon />
             </IconButton>
+
+            {isMobile && <FiltersButton onClick={() => setFiltersDrawerOpen(true)} />}
           </Box>
 
           {(isDailyView || isWeeklyView) && !isMobile && <TaskFilters />}
         </Stack>
 
-        {(isDailyView || isWeeklyView) && isMobile && <TaskFilters />}
+        {(isDailyView || isWeeklyView) && isMobile && <TaskFilters openDrawer={filtersDrawerOpen} setDrawerOpen={setFiltersDrawerOpen} />}
       </Box>
 
       <Dialog

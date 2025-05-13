@@ -355,7 +355,7 @@ const TaskList = ({ tasks = [], viewType = 'daily' }) => {
               </Box>
             }
           />
-          <ListItemSecondaryAction>
+          <ListItemSecondaryAction sx={{ mt: { xs: 2.5, sm: 1 } }}>
             <IconButton
               edge="end"
               onClick={(e) => {
