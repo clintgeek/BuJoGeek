@@ -73,14 +73,15 @@ const DateNavigation = ({ currentDate, onDateChange }) => {
   };
 
   const formatDate = () => {
+    const dayFormat = isMobile ? 'EEE' : 'EEEE';
     switch (window.location.pathname.split('/')[2]) {
       case 'weekly':
         const weekStart = startOfWeek(currentDate, { weekStartsOn: 0 }); // 0 = Sunday
-        return `Week of ${format(weekStart, 'MMMM d, yyyy')}`;
+        return `Week of ${format(weekStart, `${dayFormat}, MMMM d, yyyy`)}`;
       case 'monthly':
         return format(currentDate, 'MMMM yyyy');
       default:
-        return format(currentDate, 'EEEE, MMMM d, yyyy');
+        return format(currentDate, `${dayFormat}, MMMM d, yyyy`);
     }
   };
 
@@ -90,29 +91,32 @@ const DateNavigation = ({ currentDate, onDateChange }) => {
         sx={{
           display: 'flex',
           flexDirection: isDailyView && !isMobile ? 'row' : 'column',
-          gap: 2,
-          p: 2,
+          gap: { xs: 1, sm: 2 },
+          px: 2,
+          py: { xs: 0.5, sm: 2 },
           borderBottom: 1,
           borderColor: 'divider',
           bgcolor: 'background.paper',
+          width: '100%',
+          minWidth: 0,
         }}
       >
         <Stack
           direction="row"
           alignItems="center"
-          spacing={2}
+          spacing={isMobile ? 1 : 2}
           sx={{
-            minWidth: isDailyView ? 'auto' : 'none',
+            minWidth: 0,
             justifyContent: 'space-between',
             width: '100%'
           }}
         >
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1, sm: 2 }, width: '100%', minWidth: 0 }}>
             <IconButton onClick={handlePrevious}>
               <ChevronLeftIcon />
             </IconButton>
 
-            <Typography variant="h6" component="div" noWrap>
+            <Typography variant="h6" component="div" noWrap sx={{ minWidth: 0, flexShrink: 1, flexGrow: 1, overflow: 'hidden', textOverflow: 'ellipsis' }}>
               {formatDate()}
             </Typography>
 

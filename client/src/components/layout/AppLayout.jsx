@@ -209,7 +209,7 @@ const AppLayout = ({
       </Drawer>
 
       {/* Main Content */}
-      <Box sx={{ flex: 1 }}>
+      <Box sx={{ flex: 1, minHeight: 0, overflow: 'auto', px: 0, py: { xs: 0, sm: 2 } }}>
         {children}
       </Box>
 
