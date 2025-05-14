@@ -44,10 +44,10 @@ const TaskFilters = ({ openDrawer, setDrawerOpen }) => {
     <Box
       sx={{
         display: 'flex',
-        flexDirection: 'column',
+        flexDirection: { xs: 'column', sm: 'row' },
         gap: 2,
         width: '100%',
-        alignItems: 'stretch',
+        alignItems: { xs: 'stretch', sm: 'center' },
         p: 2
       }}
     >
