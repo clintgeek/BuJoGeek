@@ -130,8 +130,6 @@ const DateNavigation = ({ currentDate, onDateChange }) => {
 
             {isMobile && <FiltersButton onClick={() => setFiltersDrawerOpen(true)} />}
           </Box>
-
-          {(isDailyView || isWeeklyView) && !isMobile && <TaskFilters />}
         </Stack>
 
         {(isDailyView || isWeeklyView) && isMobile && <TaskFilters openDrawer={filtersDrawerOpen} setDrawerOpen={setFiltersDrawerOpen} />}
