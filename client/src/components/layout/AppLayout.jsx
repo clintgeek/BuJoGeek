@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   AppBar,
   Box,
@@ -31,6 +31,48 @@ const AppLayout = ({
   const [drawerOpen, setDrawerOpen] = useState(false);
   const { logout } = useAuth();
   const navigate = useNavigate();
+
+  // Add debug info state
+  const [debugInfo, setDebugInfo] = useState({
+    width: 0,
+    height: 0,
+    userAgent: '',
+    os: '',
+    browser: '',
+    isMobileLayout: false
+  });
+
+  useEffect(() => {
+    const getOS = () => {
+      const ua = navigator.userAgent;
+      if (/android/i.test(ua)) return 'Android';
+      if (/iPad|iPhone|iPod/.test(ua)) return 'iOS';
+      if (/Win/.test(ua)) return 'Windows';
+      if (/Mac/.test(ua)) return 'MacOS';
+      if (/Linux/.test(ua)) return 'Linux';
+      return 'Unknown';
+    };
+    const getBrowser = () => {
+      const ua = navigator.userAgent;
+      if (ua.includes('Chrome') && !ua.includes('Edg')) return 'Chrome';
+      if (ua.includes('Safari') && !ua.includes('Chrome')) return 'Safari';
+      if (ua.includes('Firefox')) return 'Firefox';
+      if (ua.includes('Edg')) return 'Edge';
+      return 'Unknown';
+    };
+    const isMobile = () => window.innerWidth <= 600;
+    const update = () => setDebugInfo({
+      width: window.innerWidth,
+      height: window.innerHeight,
+      userAgent: navigator.userAgent,
+      os: getOS(),
+      browser: getBrowser(),
+      isMobileLayout: isMobile()
+    });
+    update();
+    window.addEventListener('resize', update);
+    return () => window.removeEventListener('resize', update);
+  }, []);
 
   const handleDrawerToggle = () => {
     setDrawerOpen(!drawerOpen);
@@ -151,6 +193,18 @@ const AppLayout = ({
               <ListItemText primary="Logout" />
             </ListItem>
           </List>
+          <Divider />
+          {/* Debug Section */}
+          <Box sx={{ p: 2 }}>
+            <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
+              Debug Info
+            </Typography>
+            <Typography variant="body2">Resolution: {debugInfo.width} × {debugInfo.height}</Typography>
+            <Typography variant="body2">OS: {debugInfo.os}</Typography>
+            <Typography variant="body2">Browser: {debugInfo.browser}</Typography>
+            <Typography variant="body2">Mobile Layout: {debugInfo.isMobileLayout ? 'Yes' : 'No'}</Typography>
+            <Typography variant="body2" sx={{ wordBreak: 'break-all' }}>UA: {debugInfo.userAgent}</Typography>
+          </Box>
         </Box>
       </Drawer>
 
