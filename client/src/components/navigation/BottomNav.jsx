@@ -14,8 +14,10 @@ import {
   Add as AddIcon
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
+import useMediaQuery from '@mui/material/useMediaQuery';
+import { useTheme } from '@mui/material/styles';
 
-const views = [
+const allViews = [
   { value: 'all', label: 'All', icon: ViewListIcon },
   { value: 'daily', label: 'Daily', icon: CalendarTodayIcon },
   { value: 'weekly', label: 'Weekly', icon: CalendarViewWeekIcon },
@@ -28,6 +30,13 @@ const BottomNav = ({ onAddClick }) => {
   const location = useLocation();
   const pathParts = location.pathname.split('/');
   const currentView = pathParts[2] || 'daily';
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+
+  // Only show all, daily, weekly on mobile
+  const views = isMobile
+    ? allViews.filter(v => v.value !== 'monthly' && v.value !== 'year')
+    : allViews;
 
   const handleChange = (event, newValue) => {
     // Handle special case for add button

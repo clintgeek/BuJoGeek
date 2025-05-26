@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Box } from '@mui/material';
+import { Box, useTheme, useMediaQuery } from '@mui/material';
 import { useLocation } from 'react-router-dom';
 import TaskView from '../components/tasks/TaskView';
 import DateNavigation from '../components/DateNavigation';
@@ -9,6 +9,8 @@ const TasksPage = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const location = useLocation();
   const view = location.pathname.split('/')[2] || 'daily';
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   const handleDateChange = (newDate) => {
     setCurrentDate(newDate);
@@ -29,10 +31,18 @@ const TasksPage = () => {
 
       {/* Date Navigation for other views */}
       {view !== 'all' && (
-        <DateNavigation
-          currentDate={currentDate}
-          onDateChange={handleDateChange}
-        />
+        <>
+          <DateNavigation
+            currentDate={currentDate}
+            onDateChange={handleDateChange}
+          />
+          {/* Desktop: Filters in a second row below DateNavigation */}
+          {!isMobile && (
+            <Box sx={{ px: 2, py: 1, borderBottom: 1, borderColor: 'divider', bgcolor: 'background.paper' }}>
+              <TaskFilters />
+            </Box>
+          )}
+        </>
       )}
 
       {/* Main Task View */}

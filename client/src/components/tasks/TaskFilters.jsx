@@ -1,10 +1,28 @@
-import React from 'react';
-import { Box, FormControl, InputLabel, Select, MenuItem, Checkbox, ListItemText, useTheme } from '@mui/material';
+import React, { useState } from 'react';
+import { Box, FormControl, InputLabel, Select, MenuItem, Checkbox, ListItemText, useTheme, Button, Drawer, IconButton, Typography } from '@mui/material';
+import useMediaQuery from '@mui/material/useMediaQuery';
+import CloseIcon from '@mui/icons-material/Close';
+import FilterListIcon from '@mui/icons-material/FilterList';
 import { useTaskContext } from '../../context/TaskContext';
 
-const TaskFilters = () => {
+export const FiltersButton = ({ onClick }) => (
+  <IconButton
+    onClick={onClick}
+    sx={{ ml: 0.5, p: 1, display: { xs: 'inline-flex', sm: 'none' } }}
+    aria-label="Open filters"
+    size="medium"
+  >
+    <FilterListIcon fontSize="medium" />
+  </IconButton>
+);
+
+const TaskFilters = ({ openDrawer, setDrawerOpen }) => {
   const { filters, updateFilters, tasks } = useTaskContext();
   const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const [internalDrawerOpen, setInternalDrawerOpen] = useState(false);
+  const drawerOpen = typeof openDrawer === 'boolean' ? openDrawer : internalDrawerOpen;
+  const handleSetDrawerOpen = setDrawerOpen || setInternalDrawerOpen;
 
   const handleFilterChange = (field, value) => {
     updateFilters({ ...filters, [field]: value });
@@ -21,10 +39,19 @@ const TaskFilters = () => {
     return Array.from(tagSet).sort();
   }, [tasks]);
 
-  // Full filter set for other views
-  return (
-    <Box sx={{ display: 'flex', gap: 2 }}>
-      <FormControl size="small" sx={{ minWidth: 200 }}>
+  // The filter controls (shared between inline and drawer)
+  const filterControls = (
+    <Box
+      sx={{
+        display: 'flex',
+        flexDirection: { xs: 'column', sm: 'row' },
+        gap: 2,
+        width: '100%',
+        alignItems: { xs: 'stretch', sm: 'center' },
+        p: 2
+      }}
+    >
+      <FormControl size="small" sx={{ minWidth: 120 }}>
         <InputLabel>Search</InputLabel>
         <Select
           value={filters.search || ''}
@@ -104,6 +131,40 @@ const TaskFilters = () => {
           <MenuItem value="?">Question (?)</MenuItem>
         </Select>
       </FormControl>
+    </Box>
+  );
+
+  if (isMobile) {
+    return (
+      <Drawer
+        anchor="right"
+        open={drawerOpen}
+        onClose={() => handleSetDrawerOpen(false)}
+        PaperProps={{ sx: { width: '80vw', maxWidth: 340 } }}
+      >
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', p: 2, pb: 0 }}>
+          <Typography variant="h6">Filters</Typography>
+          <IconButton onClick={() => handleSetDrawerOpen(false)}>
+            <CloseIcon />
+          </IconButton>
+        </Box>
+        {filterControls}
+      </Drawer>
+    );
+  }
+
+  // Desktop: always show filters inline
+  return (
+    <Box
+      sx={{
+        display: 'flex',
+        flexDirection: 'row',
+        gap: 2,
+        width: '100%',
+        alignItems: 'center',
+      }}
+    >
+      {filterControls}
     </Box>
   );
 };

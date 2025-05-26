@@ -12,17 +12,9 @@ import {
   DialogContent,
   DialogActions,
   Button,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  TextField,
-  Chip,
-  Stack
 } from '@mui/material';
 import {
   Delete as DeleteIcon,
-  Edit as EditIcon,
   Check as CheckIcon,
   ArrowForward as ArrowForwardIcon
 } from '@mui/icons-material';
@@ -355,7 +347,7 @@ const TaskList = ({ tasks = [], viewType = 'daily' }) => {
               </Box>
             }
           />
-          <ListItemSecondaryAction>
+          <ListItemSecondaryAction sx={{ mt: { xs: 2.5, sm: 1 } }}>
             <IconButton
               edge="end"
               onClick={(e) => {
@@ -401,7 +393,12 @@ const TaskList = ({ tasks = [], viewType = 'daily' }) => {
           {sortedTasks.map(renderTask)}
         </List>
         {taskArray.length === 0 && (
-          <Typography variant="body1" color="text.secondary" align="center" py={3}>
+          <Typography
+            variant="body1"
+            color="text.secondary"
+            align="center"
+            py={{ xs: 1, sm: 3 }}
+          >
             No tasks found
           </Typography>
         )}
@@ -476,12 +473,12 @@ const TaskList = ({ tasks = [], viewType = 'daily' }) => {
     return (
       <Box>
         {sortedDates.map((date) => (
-          <Box key={date} mb={3}>
+          <Box key={date} mb={{ xs: 1, sm: 3 }}>
             <Typography
               variant="subtitle1"
               sx={{
                 px: 2,
-                py: 1,
+                py: { xs: 0.5, sm: 1 },
                 bgcolor: 'background.paper',
                 borderBottom: '1px solid',
                 borderColor: 'divider',
@@ -505,7 +502,12 @@ const TaskList = ({ tasks = [], viewType = 'daily' }) => {
           </Box>
         ))}
         {filteredTasks.length === 0 && (
-          <Typography variant="body1" color="text.secondary" align="center" py={3}>
+          <Typography
+            variant="body1"
+            color="text.secondary"
+            align="center"
+            py={{ xs: 1, sm: 3 }}
+          >
             No tasks found
           </Typography>
         )}

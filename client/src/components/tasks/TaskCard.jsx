@@ -98,14 +98,28 @@ const TaskCard = ({ task, onEdit }) => {
         sx={{
           borderRadius: 1,
           mb: 1,
-          bgcolor: 'background.paper'
+          bgcolor: 'background.paper',
+          px: { xs: 1, sm: 2 },
+          py: { xs: 1.5, sm: 1 },
+          minHeight: { xs: 64, sm: 48 },
         }}
       >
-        <ListItemIcon onClick={handleStatusToggle} sx={{ cursor: 'pointer' }}>
+        <ListItemIcon
+          onClick={handleStatusToggle}
+          sx={{
+            cursor: 'pointer',
+            minWidth: { xs: 44, sm: 40 },
+            minHeight: { xs: 44, sm: 40 },
+            mr: { xs: 1, sm: 2 },
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
             {task.status === 'completed' ? (
-              <CheckCircleIcon color="success" />
+              <CheckCircleIcon color="success" sx={{ fontSize: { xs: 32, sm: 24 } }} />
             ) : (
-              <UncheckedIcon />
+              <UncheckedIcon sx={{ fontSize: { xs: 32, sm: 24 } }} />
             )}
         </ListItemIcon>
 
@@ -115,20 +129,22 @@ const TaskCard = ({ task, onEdit }) => {
               <Typography
                 component="span"
                 sx={{
-                  textDecoration: task.status === 'completed' ? 'line-through' : 'none'
+                  textDecoration: task.status === 'completed' ? 'line-through' : 'none',
+                  fontSize: { xs: '1.1rem', sm: '1rem' },
+                  fontWeight: 500,
                 }}
               >
                 {cleanContent(task.content)}
               </Typography>
               {task.priority && (
-                <FlagIcon color={priorityColors[task.priority]} fontSize="small" />
+                <FlagIcon color={priorityColors[task.priority]} fontSize="small" sx={{ fontSize: { xs: 20, sm: 16 } }} />
               )}
             </Box>
           }
           secondary={
-            <Box sx={{ mt: 0.5 }}>
+            <Box sx={{ mt: 0.5, }}>
               {task.dueDate && (
-                <Typography variant="body2" color="text.secondary" component="span">
+                <Typography variant="body2" color="text.secondary" component="span" sx={{ fontSize: { xs: '0.95rem', sm: '0.875rem' } }}>
                   Due: {format(new Date(task.dueDate), 'MMM d, yyyy h:mm a')}
                 </Typography>
               )}
@@ -139,7 +155,8 @@ const TaskCard = ({ task, onEdit }) => {
                   sx={{
                     mt: 0.5,
                     fontStyle: 'italic',
-                    display: 'block'
+                    display: 'block',
+                    fontSize: { xs: '0.95rem', sm: '0.875rem' }
                   }}
                 >
                   Note: {task.note}
@@ -152,7 +169,7 @@ const TaskCard = ({ task, onEdit }) => {
                     key={tag}
                     label={tag}
                     size="small"
-                      sx={{ mr: 0.5 }}
+                    sx={{ mr: 0.5, fontSize: { xs: '0.85rem', sm: '0.75rem' }, height: { xs: 24, sm: 20 } }}
                   />
                 ))}
                 </Box>
