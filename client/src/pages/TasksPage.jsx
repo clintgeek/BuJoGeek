@@ -47,7 +47,11 @@ const TasksPage = () => {
 
       {/* Main Task View */}
       <Box sx={{ flex: 1, overflowY: 'auto', p: 2 }}>
-        <TaskView viewType={view} date={currentDate} />
+        <TaskView
+          viewType={view}
+          date={currentDate}
+          onDateChange={handleDateChange}
+        />
       </Box>
     </Box>
   );

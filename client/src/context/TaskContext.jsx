@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback, useRef, useEffect } from 'react';
+import React, { createContext, useContext, useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from 'date-fns';
 
@@ -181,7 +181,7 @@ const TaskProvider = ({ children }) => {
       console.error('Error fetching tasks:', error);
       handleApiError(error);
     }
-  }, [loading, getAuthHeaders, handleApiError]);
+  }, [getAuthHeaders, handleApiError]);
 
   // Cleanup timeout on unmount
   useEffect(() => {
@@ -548,92 +548,7 @@ const TaskProvider = ({ children }) => {
     }
   }, [getAuthHeaders, handleApiError]);
 
-  // Convenience methods for different views
-  const fetchDailyTasks = useCallback(async (date) => {
-    try {
-      setLoading(LoadingState.FETCHING);
-      setError(null);
-
-      const formattedDate = format(date, 'yyyy-MM-dd');
-      const response = await axios.get(`${API_URL}/tasks/daily`, {
-        params: { date: formattedDate },
-        headers: getAuthHeaders()
-      });
-
-      setTasks(response.data);
-      setLoading(LoadingState.IDLE);
-    } catch (error) {
-      console.error('Error fetching daily tasks:', error);
-      handleApiError(error);
-    }
-  }, [getAuthHeaders, handleApiError]);
-
-  const fetchWeeklyTasks = useCallback(async (startDate, endDate) => {
-    try {
-      setLoading(LoadingState.FETCHING);
-      setError(null);
-
-      const formattedStartDate = format(startDate, 'yyyy-MM-dd');
-      const formattedEndDate = format(endDate, 'yyyy-MM-dd');
-      const response = await axios.get(`${API_URL}/tasks/weekly`, {
-        params: {
-          startDate: formattedStartDate,
-          endDate: formattedEndDate
-        },
-        headers: getAuthHeaders()
-      });
-
-      setTasks(response.data);
-      setLoading(LoadingState.IDLE);
-    } catch (error) {
-      console.error('Error fetching weekly tasks:', error);
-      handleApiError(error);
-    }
-  }, [getAuthHeaders, handleApiError]);
-
-  const fetchMonthlyTasks = useCallback(async (startDate, endDate) => {
-    try {
-      setLoading(LoadingState.FETCHING);
-      setError(null);
-
-      const formattedStartDate = format(startDate, 'yyyy-MM-dd');
-      const formattedEndDate = format(endDate, 'yyyy-MM-dd');
-      const response = await axios.get(`${API_URL}/tasks/monthly`, {
-        params: {
-          startDate: formattedStartDate,
-          endDate: formattedEndDate
-        },
-        headers: getAuthHeaders()
-      });
-
-      setTasks(response.data);
-      setLoading(LoadingState.IDLE);
-    } catch (error) {
-      console.error('Error fetching monthly tasks:', error);
-      handleApiError(error);
-    }
-  }, [getAuthHeaders, handleApiError]);
-
-  const fetchYearlyTasks = useCallback(async (startDate, endDate) => {
-    try {
-      setLoading(LoadingState.FETCHING);
-      setError(null);
-
-      const year = startDate.getFullYear();
-      const response = await axios.get(`${API_URL}/tasks/yearly`, {
-        params: { year },
-        headers: getAuthHeaders()
-      });
-
-      setTasks(response.data);
-      setLoading(LoadingState.IDLE);
-    } catch (error) {
-      console.error('Error fetching yearly tasks:', error);
-      handleApiError(error);
-    }
-  }, [getAuthHeaders, handleApiError]);
-
-  const value = {
+  const value = useMemo(() => ({
     // State
     tasks,
     loading,
@@ -655,16 +570,26 @@ const TaskProvider = ({ children }) => {
     deleteTask,
     migrateTask,
 
-    // View-specific fetches
-    fetchDailyTasks,
-    fetchWeeklyTasks,
-    fetchMonthlyTasks,
-    fetchYearlyTasks,
-
     // Constants
     TaskError,
     LoadingState
-  };
+  }), [
+    tasks,
+    loading,
+    error,
+    filters,
+    currentView,
+    currentDate,
+    updateFilters,
+    clearFilters,
+    fetchTasks,
+    fetchAllTasks,
+    createTask,
+    updateTask,
+    updateTaskStatus,
+    deleteTask,
+    migrateTask
+  ]);
 
   return (
     <TaskContext.Provider value={value}>

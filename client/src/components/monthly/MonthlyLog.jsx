@@ -217,52 +217,54 @@ const DayCell = ({ day, tasks = [], isCurrentMonth, onClick }) => {
   );
 };
 
-const MonthlyLog = () => {
+const MonthlyLog = ({ date, onDateChange }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  const [selectedMonth, setSelectedMonth] = useState(new Date());
   const [selectedDay, setSelectedDay] = useState(null);
   const [selectedDayTasks, setSelectedDayTasks] = useState([]);
-  const { tasks, loading, fetchMonthlyTasks } = useTaskContext();
+  const { tasks, loading, fetchTasks, LoadingState } = useTaskContext();
   const lastFetchRef = useRef(null);
 
-  const monthStart = startOfMonth(selectedMonth);
-  const monthEnd = endOfMonth(selectedMonth);
+  const monthStart = startOfMonth(date);
+  const monthEnd = endOfMonth(date);
   const calendarStart = startOfWeek(monthStart, { weekStartsOn: 0 });
   const calendarEnd = endOfWeek(monthEnd, { weekStartsOn: 0 });
   const daysInCalendar = eachDayOfInterval({ start: calendarStart, end: calendarEnd });
 
   // Memoize the date range to prevent unnecessary re-renders
-  const dateRange = useMemo(() => ({
-    start: monthStart,
-    end: monthEnd
-  }), [monthStart, monthEnd]);
+  const dateRange = useMemo(() => {
+    const start = startOfMonth(date);
+    const end = endOfMonth(date);
+    return { start, end };
+  }, [date]);
 
   useEffect(() => {
-    const fetchKey = `${ dateRange.start.toISOString() }-${ dateRange.end.toISOString() }`;
+    const fetchKey = `${dateRange.start.toISOString()}-${dateRange.end.toISOString()}`;
 
     // Only fetch if we're not already loading and haven't fetched this range
-    if (loading === LoadingState.IDLE && lastFetchRef.current !== fetchKey) {
+    if (loading !== LoadingState.FETCHING && lastFetchRef.current !== fetchKey) {
       lastFetchRef.current = fetchKey;
-      fetchMonthlyTasks(dateRange.start, dateRange.end);
+      fetchTasks('monthly', date);
     }
-  }, [dateRange, fetchMonthlyTasks, loading]);
+  }, [dateRange, fetchTasks, loading, date]);
 
   const handlePreviousMonth = () => {
-    setSelectedMonth(prev => subMonths(prev, 1));
+    onDateChange(subMonths(date, 1));
   };
 
   const handleNextMonth = () => {
-    setSelectedMonth(prev => addMonths(prev, 1));
+    onDateChange(addMonths(date, 1));
   };
 
   const handleToday = () => {
-    setSelectedMonth(new Date());
+    onDateChange(new Date());
   };
 
   const handleDateChange = (event) => {
     const newDate = new Date(event.target.value);
-    setSelectedMonth(newDate);
+    if (!isNaN(newDate)) {
+      onDateChange(newDate);
+    }
   };
 
   const getTasksForDay = (date) => {
@@ -308,82 +310,18 @@ const MonthlyLog = () => {
       height: '100%',
       display: 'flex',
       flexDirection: 'column',
-      gap: 2,
-      p: 2,
-      maxWidth: '1200px',
-      margin: '0 auto',
-      width: '100%'
     }}>
-      {/* Month Header */}
-      {/* <Paper
-        elevation={0}
-        sx={{
-          p: 2,
-          borderRadius: 2,
-          border: '1px solid',
-          borderColor: 'divider'
-        }}
-      >
-        <Stack
-          direction="row"
-          alignItems="center"
-          spacing={2}
-        >
-          <IconButton onClick={handlePreviousMonth} size="small">
-            <ChevronLeftIcon />
-          </IconButton>
-
-          <Typography
-            variant="h6"
-            component="div"
-            sx={{
-              flex: 1,
-              textAlign: 'center',
-              fontFamily: '"Roboto Mono", monospace',
-              fontWeight: 500
-            }}
-          >
-            {format(selectedMonth, 'MMMM yyyy')}
-          </Typography>
-
-          <Stack direction="row" spacing={1}>
-            <Tooltip title="Today">
-              <IconButton onClick={handleToday} size="small">
-                <TodayIcon />
-              </IconButton>
-            </Tooltip>
-            <Tooltip title="Select date">
-              <IconButton component="label" size="small">
-                <CalendarIcon />
-                <input
-                  type="date"
-                  value={format(selectedMonth, 'yyyy-MM-dd')}
-                  onChange={handleDateChange}
-                  style={{ display: 'none' }}
-                />
-              </IconButton>
-            </Tooltip>
-            <IconButton onClick={handleNextMonth} size="small">
-              <ChevronRightIcon />
-            </IconButton>
-          </Stack>
-        </Stack>
-      </Paper> */}
-
       {/* Calendar Grid */}
-      <Paper
-        elevation={0}
-        sx={{
-          flex: 1,
-          p: 2,
-          borderRadius: 2,
-          border: '1px solid',
-          borderColor: 'divider',
-          overflow: 'auto',
-          display: 'flex',
-          flexDirection: 'column',
-        }}
-      >
+      <Grid container columns={7} sx={{
+        border: '1px solid',
+        flex: 1,
+        p: 2,
+        borderRadius: 2,
+        borderColor: 'divider',
+        overflow: 'auto',
+        display: 'flex',
+        flexDirection: 'column',
+      }}>
         {/* Weekday Headers */}
         <Box
           sx={{
@@ -455,7 +393,7 @@ const MonthlyLog = () => {
                   <DayCell
                     day={day}
                     tasks={getTasksForDay(day)}
-                    isCurrentMonth={isSameMonth(day, selectedMonth)}
+                    isCurrentMonth={isSameMonth(day, date)}
                     onClick={handleDayClick}
                   />
                 </Box>
@@ -463,7 +401,7 @@ const MonthlyLog = () => {
             ))}
           </Box>
         </Box>
-      </Paper>
+      </Grid>
 
       {/* Day Detail Dialog */}
       <Dialog
