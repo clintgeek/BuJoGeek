@@ -7,7 +7,7 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=${PORT}
-      - DB_URI=mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@192.168.1.17:27017/bujogeek?authSource=admin
+      - DB_URI=${DB_URI}
       - JWT_SECRET=${JWT_SECRET}
       - SECRET_KEY=${SECRET_KEY}
     expose:
