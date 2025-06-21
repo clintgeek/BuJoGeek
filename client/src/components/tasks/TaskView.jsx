@@ -5,14 +5,17 @@ import TaskList from './TaskList';
 import MonthlyLog from '../monthly/MonthlyLog';
 import YearlyLog from '../yearly/YearlyLog';
 
-const TaskView = ({ viewType, date }) => {
+const TaskView = ({ viewType, date, onDateChange }) => {
   const { tasks, loading, error, fetchTasks, LoadingState } = useTaskContext();
 
   useEffect(() => {
+    if (viewType === 'monthly' || viewType === 'year') {
+      return;
+    }
     fetchTasks(viewType, date);
   }, [viewType, date, fetchTasks]);
 
-  if (loading === LoadingState.FETCHING) {
+  if (loading === LoadingState.FETCHING && viewType !== 'monthly' && viewType !== 'year') {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
         <CircularProgress />
@@ -31,7 +34,7 @@ const TaskView = ({ viewType, date }) => {
   if (viewType === 'monthly') {
     return (
       <Box>
-        <MonthlyLog date={date} />
+        <MonthlyLog date={date} onDateChange={onDateChange} />
       </Box>
     );
   }
@@ -39,7 +42,7 @@ const TaskView = ({ viewType, date }) => {
   if (viewType === 'year') {
     return (
       <Box>
-        <YearlyLog date={date} />
+        <YearlyLog date={date} onDateChange={onDateChange} />
       </Box>
     );
   }
